@@ -17,7 +17,7 @@ import {
 } from "../validators/userValidator.js";
 
 import { validationResult } from "express-validator";
-import { isLoggedIn } from "../utils/isAuth.js"
+import { isLoggedIn } from "../utils/isAuth.js";
 
 const router = express.Router();
 
@@ -48,25 +48,15 @@ router.post("/googleauth/details", isLoggedIn, afterGoogleAuthDetails);
 router.get("/verify-email/:token", verifyEmail);
 
 // -------- LOGIN --------
-router.post("/login", userLoginValidator(), (req, res) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    const message = errors
-      .array()
-      .map((err) => err.msg)
-      .join(", ");
-    return res.status(401).json({ message });
-  }
-
-  loginUser(req, res);
-});
+router.post("/login", loginUser);
 
 // -------- LOGOUT --------
 router.get("/logout", logoutUser);
 
 // -------- FORGOT PASSWORD --------
 router.post("/forgot-password", sendForgotPasswordEmail);
+
+router.get("/reset-password/:token", getResetPasswordPage);
 
 // -------- RESET PASSWORD --------
 router.post("/reset-password/:token", resetForgotPassword);

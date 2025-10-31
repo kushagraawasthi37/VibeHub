@@ -7,12 +7,17 @@ import {
 } from "../utils/mail.js";
 
 import crypto from "crypto";
+import bcrypt from "bcrypt";
+import { use } from "react";
 // -------- REGISTER USER --------
 
 export const registerUser = async (req, res) => {
   try {
     const { email, username, password, name, age } = req.body;
 
+    if (!email || !username || !password || !name || !age) {
+      return res.status(400).json("All fields are required");
+    }
     // Check if user already exists
     let existingUser = await User.findOne({ $or: [{ email }, { username }] }); //$or is a query operator in MongoDB.It allows you to match documents that satisfy at least one condition from an array of conditions.Think of it like a logical OR in programming: condition1 || condition2.
     if (existingUser) {
@@ -62,9 +67,10 @@ export const registerUser = async (req, res) => {
              <p>${emailContent.body.outro}</p>`,
     });
 
-    res
-      .status(201)
-      .json({ message: "Email verification link sent successfully" });
+    res.status(201).json({
+      message:
+        "Email verification link sent successfully check your inbox or spam",
+    });
   } catch (err) {
     // console.error(err);
     res.status(500).json({
@@ -113,10 +119,13 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     // Debug: login
-    // console.log("⚡ Login route hit");
+    console.log("⚡ Login route hit");
 
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
     // Debug: log email before processing
     // console.log("Email received from form:", `"${email}"`);
 
@@ -124,8 +133,8 @@ export const loginUser = async (req, res) => {
     // console.log("Normalized email:", `"${emailInput}"`);
 
     // Find user in DB
-    const user = await User.findOne({ email: emailInput });
-    // console.log("Found user:", user);
+    const user = await User.findOne({ email: emailInput }).select("+password");
+    console.log("Found user:", user);
 
     if (!user) {
       return res.status(401).json({ message: "User not found." });
@@ -138,7 +147,7 @@ export const loginUser = async (req, res) => {
     }
 
     const isMatch = await user.isPasswordCorrect(password);
-    // console.log("Password match:", isMatch);
+    console.log("Password match:", isMatch);
 
     if (!isMatch) {
       return res.status(403).json({ message: "Incorrect password." });
@@ -164,14 +173,14 @@ export const loginUser = async (req, res) => {
       .status(200)
       .json({ message: "Login successful!", user, accessToken });
   } catch (err) {
-    // console.error("Login error:", err);
-    req.flash("error_msg", "Something went wrong. Please try again.");
-    res.redirect("/login");
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Login error" });
   }
 };
 
 export const googleAuth = async (req, res) => {
   try {
+    // console.log("google auth hit");
     const { email, name } = req.body;
 
     if (!email || !name) {
@@ -188,6 +197,8 @@ export const googleAuth = async (req, res) => {
         isEmailVerified: true,
       });
     }
+
+    // console.log(user.name);
 
     const isProd = process.env.NODE_ENV === "production";
     const accessToken = user.generateAccessToken();
@@ -218,22 +229,29 @@ export const afterGoogleAuthDetails = async (req, res) => {
         .status(400)
         .json({ message: "password and username must required" });
     }
-
-    const userId = req.userId;
+    const token = req.token;
+    const userId = req.user._id;
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(403).json({ message: "User not found" });
     }
 
-    user.password = password;
+    const hashedPassowrd = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassowrd;
     user.username = username;
 
     await user.save();
+    return res.status(201).json({
+      message: "password and username updated sucessfully",
+      user,
+      token,
+    });
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Something went worng.Cant update details now" });
+      .json({ message: "Something went wrong.Cant update details now" });
   }
 };
 
@@ -249,7 +267,7 @@ export const logoutUser = (req, res) => {
   }
 };
 
-// -------- FORGOT PASSWORD --------
+// -------- FORGOT PASSWORD ---------
 export const sendForgotPasswordEmail = async (req, res) => {
   try {
     const { email } = req.body;
@@ -282,9 +300,11 @@ export const sendForgotPasswordEmail = async (req, res) => {
              <p>${emailContent.body.outro}</p>`,
     });
 
-    return res
-      .status(200)
-      .json({ message: "Password reset email sent. Check your inbox!" });
+    console.log(hashedToken);
+    return res.status(200).json({
+      token: hashedToken,
+      message: "Password reset email sent. Check your inbox! or spam",
+    });
   } catch (err) {
     return res
       .status(500)
@@ -327,10 +347,13 @@ export const resetForgotPassword = async (req, res) => {
     const token = req.params.token;
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
+    console.log(hashedToken);
     const user = await User.findOne({
       forgotPasswordToken: hashedToken,
       forgotPasswordExpiry: { $gt: Date.now() },
     });
+
+    console.log(user);
 
     if (!user) {
       return res
