@@ -24,6 +24,7 @@ connectDB();
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/comment", commentRoutes);
 
 // ✅ Fallback route for unknown API paths
 app.use("*", (req, res) => {
@@ -89,7 +91,7 @@ setInterval(async () => {
   } catch (err) {
     console.error("Cleanup error:", err);
   }
-}, 60 * 60 * 1000);
+}, 30 * 60 * 1000);
 
 // ✅ Start server
 const PORT = process.env.PORT || 8000;

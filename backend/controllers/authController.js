@@ -203,10 +203,11 @@ export const googleAuth = async (req, res) => {
     const isProd = process.env.NODE_ENV === "production";
     const accessToken = user.generateAccessToken();
 
+    console.log(isProd);
     res.cookie("token", accessToken, {
       httpOnly: true, // prevents JS access
       secure: isProd, // HTTPS only in prod
-      sameSite: isProd ? "strict" : "none", // prevents CSRF
+      sameSite: isProd ? "strict" : "lax", // prevents CSRF
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     });
 

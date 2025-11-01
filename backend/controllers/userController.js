@@ -2,6 +2,8 @@
 import userModel from "../models/user.js";
 import postModel from "../models/post.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import User from "../models/user.js";
+import Post from "../models/post.js";
 
 // -------- PROFILE PAGE --------
 export const getProfile = async (req, res) => {
@@ -25,32 +27,6 @@ export const getProfile = async (req, res) => {
   } catch (err) {
     console.error("Profile load error:", err);
     req.flash("error_msg", "Something went wrong. Please log in again.");
-    res.redirect("/login");
-  }
-};
-
-// -------- FEED PAGE --------
-export const getFeed = async (req, res) => {
-  try {
-    if (!req.user) {
-      req.flash("error_msg", "You must be logged in to view the feed.");
-      return res.redirect("/login");
-    }
-
-    const posts = await postModel
-      .find()
-      .populate("user", "username avatar")
-      .sort({ date: -1 })
-      .lean();
-
-    res.render("feed", {
-      posts,
-      userId: req.user._id.toString(),
-      user: req.user,
-    });
-  } catch (err) {
-    console.error("Feed load error:", err);
-    req.flash("error_msg", "Something went wrong. Please try again.");
     res.redirect("/login");
   }
 };
@@ -184,5 +160,98 @@ export const updateUsercoverImage = async (req, res) => {
     console.error("Cover image update error:", err);
     req.flash("error_msg", "Error updating cover image");
     res.redirect("/profile");
+  }
+};
+
+// -------- FEED PAGE --------
+export const getFeed = async (req, res) => {
+  try {
+    let posts = await Post.find({ videoContent: { $ne: null } })
+      .populate({
+        path: "user",
+        select: "avatar coverImage username privateAccount",
+        match: { privateAccount: false },
+      })
+      .sort({ createdAt: -1 });
+
+    posts = posts.filter((post) => post.user !== null);
+    return res.status(200).json({
+      message: "All public posts with video fetched successfully",
+      posts,
+    });
+  } catch (err) {
+    console.error("Feed load error:", err);
+    return res.status(500).json({
+      message: "Something went wrong. Try again later",
+    });
+  }
+};
+
+//Home page
+export const getHome = async (req, res) => {
+  try {
+    let posts = await Post.find()
+      .populate({
+        path: "user",
+        select: "avatar coverImage username privateAccount",
+        match: { privateAccount: false },
+      })
+      .sort({ createdAt: -1 });
+
+    posts = posts.filter((post) => post.user !== null);
+
+    return res.status(200).json({
+      message: "All public posts fetched successfully",
+      posts,
+    });
+  } catch (err) {
+    console.error("Home load error:", err);
+    return res.status(500).json({
+      message: "Something went wrong. Try again later",
+    });
+  }
+};
+
+//Maintain privacy
+export const privacy = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(403).json({ message: "User not found" });
+    }
+
+    user.privateAccount = !user.privateAccount;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Privacy setting updated successfully",
+      privateAccount: user.privateAccount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error while updating privacy" });
+  }
+};
+
+//Get current user
+export const currentUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    // console.log(user.username);
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(403).json({ message: "Can't find user" });
+    }
+    return res.status(200).json({
+      message: "Current user fetched successfully",
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("Something went wrong.Try again later");
   }
 };

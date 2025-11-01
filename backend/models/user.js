@@ -7,12 +7,10 @@ const userSchema = new mongoose.Schema(
   {
     avatar: {
       type: String,
-      default: "/Images/default/avatar.png",
     },
 
     coverImage: {
       type: String,
-      default: "/Images/default/banner.png",
     },
 
     // Basic info
@@ -50,6 +48,11 @@ const userSchema = new mongoose.Schema(
         return this.provider === "email"; // only required for normal login
       },
       select: false, // secure: exclude from query by default
+    },
+
+    privateAccount: {
+      type: Boolean,
+      default: false,
     },
 
     // Verification & tokens

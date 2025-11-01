@@ -14,12 +14,15 @@ export const isLoggedIn = async (req, res, next) => {
     // console.log(token);
     // 🔍 Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("decoded token: ", decoded);
+    // console.log("decoded token: ", decoded);
     // 🧩 Find user
     const user = await User.findById(decoded.id);
     if (!user) {
+      console.log("User not found in authentication");
       return res.status(403).json({ message: "User not found." });
     }
+
+    // console.log("User :", user.username);
 
     // attach information to user
     req.user = user;

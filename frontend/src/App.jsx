@@ -9,6 +9,9 @@ import ResetPassword from "./Pages/authPages/ResetPassword";
 import VerifyEmail from "./utils/AuthVerification";
 import Loader from "./components/Loader";
 import VerifyResetToken from "./utils/VeriffyResetToken";
+import CreatePost from "./Pages/postPages/Createpost";
+import HomeFeed from "./Pages/homePages/HomeFeed";
+import Loading from "./components/Loading";
 
 const App = () => {
   return (
@@ -16,7 +19,13 @@ const App = () => {
       <ToastContainer />
       <Router>
         <Routes>
-          <Route path="/" element={<Loader />} />
+          <Route path="/" element={<HomeFeed />} />
+
+          {/* // Post Routes */}
+          <Route path="/createpost" element={<CreatePost />} />
+          <Route path="/comment" element={<Loading />} />
+
+          {/* Auth Route */}
           <Route path="/signup" element={<Registration />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/login" element={<Login />} />
@@ -26,6 +35,7 @@ const App = () => {
             path="/auth/updateDetails"
             element={<AfterGoogleAuthDetails />}
           />
+          {/* Post Route */}
         </Routes>
       </Router>
     </div>

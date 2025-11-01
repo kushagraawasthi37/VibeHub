@@ -7,7 +7,7 @@ dotenv.config({ path: "./src/.env" });
 
 // ✅ Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloud_name: process.env.CLOUDINARY_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
@@ -22,14 +22,14 @@ export const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
 
-    // console.log("✅ File uploaded to Cloudinary:", response.secure_url);
+    console.log("✅ File uploaded to Cloudinary:", response.secure_url);
 
     // Delete local file after upload
     if (fs.existsSync(localFilePath)) fs.unlinkSync(localFilePath);
 
     return response;
   } catch (err) {
-    // console.error("❌ Cloudinary Upload Error:", err.message);
+    console.error("❌ Cloudinary Upload Error:", err.message);
 
     // Cleanup local file if upload fails
     if (localFilePath && fs.existsSync(localFilePath))
