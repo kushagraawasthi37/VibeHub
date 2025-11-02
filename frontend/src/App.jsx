@@ -12,6 +12,7 @@ import VerifyResetToken from "./utils/VeriffyResetToken";
 import CreatePost from "./Pages/postPages/Createpost";
 import HomeFeed from "./Pages/homePages/HomeFeed";
 import Loading from "./components/Loading";
+import SavedPosts from "./Pages/homePages/SavedPosts";
 
 const App = () => {
   return (
@@ -35,7 +36,9 @@ const App = () => {
             path="/auth/updateDetails"
             element={<AfterGoogleAuthDetails />}
           />
+
           {/* Post Route */}
+          <Route path="/saved" element={<SavedPosts />} />
         </Routes>
       </Router>
     </div>

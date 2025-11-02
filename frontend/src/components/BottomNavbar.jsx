@@ -34,7 +34,7 @@ const BottomNavbar = () => {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
-      className="fixed -bottom-1 left-0 w-full bg-gradient-to-r from-[#1a1533]/90 via-[#2a2459]/90 to-[#1a1533]/90 
+      className="fixed -bottom-0 left-0 w-full bg-gradient-to-r from-[#1a1533]/90 via-[#2a2459]/90 to-[#1a1533]/90 
                  backdrop-blur-2xl border-t border-white/10 shadow-[0_-2px_15px_rgba(168,85,247,0.3)] 
                  flex items-center justify-around py-3 sm:py-4 z-50 sm:hidden"
     >

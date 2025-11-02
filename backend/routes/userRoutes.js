@@ -8,6 +8,7 @@ import {
   followerCount,
   followingCount,
 } from "../controllers/connection.Controller.js";
+import { userSavedContent } from "../controllers/savedController.js";
 
 const router = express.Router();
 
@@ -67,5 +68,10 @@ router.get("/account/acceptrequest/:requestId", isLoggedIn, acceptRequest);
 router.get("/follow/:adminid", isLoggedIn, Follower);
 router.get("/follower", isLoggedIn, followerCount);
 router.get("/following", isLoggedIn, followingCount);
+
+
+//Current user saved content
+router.get("/savedcontent", isLoggedIn, userSavedContent);
+
 
 export default router;

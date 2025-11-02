@@ -1,3 +1,4 @@
+import { realpathSync } from "fs";
 import Saved from "../models/saved.js"; // adjust import path as needed
 import mongoose from "mongoose";
 
@@ -64,5 +65,34 @@ export const toggleSave = async (req, res) => {
   } catch (error) {
     console.error("Error toggling save:", error);
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const userSavedContent = async (req, res) => {
+  try {
+    const userID = req.user._id;
+    const savedContent = await Saved.find({
+      user: userID,
+    }).populate({
+      path: "post",
+      populate: {
+        path: "user",
+        select: "avatar coverImage username privateAccount",
+        match: { privateAccount: false },
+      },
+    });
+
+    // Filter out savedContent where post.user is null (means privateAccount=true)
+    const filteredSavedContent = savedContent.filter(
+      (saved) => saved.post && saved.post.user // only include posts with user and privateAccount false
+    );
+
+    return res.status(200).json({
+      message: "All saved content fetched successfully",
+      savedContent: filteredSavedContent,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status9(500).json({ message: "Something went wrong.Try again later" });
   }
 };

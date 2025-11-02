@@ -8,7 +8,8 @@ import { userDataContext } from "../contexts/UserContext.jsx";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const PostCard = ({ item = {} }) => {
+const PostCard = (props) => {
+  const item = props.item;
   const navigate = useNavigate();
   const { userData, getCurrentUser } = useContext(userDataContext);
 
@@ -28,7 +29,8 @@ const PostCard = ({ item = {} }) => {
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
-
+      console.log(item);
+      console.log("HItttt");
       try {
         // Ensure current user data is loaded (ideally call this once in app, here just for example)
         await getCurrentUser();
