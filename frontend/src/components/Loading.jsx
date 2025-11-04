@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const Loading = () => {
+const Loading = ({ text = "Loading" }) => {
   return (
     <div className="flex items-center justify-center gap-3 text-white">
       <motion.div
@@ -16,7 +16,7 @@ const Loading = () => {
         }}
         transition={{ repeat: Infinity, duration: 1.5 }}
       >
-        Loading...
+        {text}
       </motion.span>
     </div>
   );

@@ -8,7 +8,6 @@ import {
 
 import crypto from "crypto";
 import bcrypt from "bcrypt";
-import { use } from "react";
 // -------- REGISTER USER --------
 
 export const registerUser = async (req, res) => {

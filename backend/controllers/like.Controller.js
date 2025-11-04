@@ -6,6 +6,9 @@ import Comment from "../models/comment.js";
 export const likePost = async (req, res) => {
   try {
     const postId = req.params.postid;
+    if (!postId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     // console.log(postId);
     const post = await Post.findById(postId);
 
@@ -38,6 +41,9 @@ export const likePost = async (req, res) => {
 export const likeComment = async (req, res) => {
   try {
     const { commentId } = req.params;
+    if (!commentId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const comment = await Comment.findById(commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
@@ -66,6 +72,9 @@ export const likeComment = async (req, res) => {
 export const postAllLike = async (req, res) => {
   try {
     const { postid } = req.params;
+    if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     // console.log(postid);
     // Find all likes for the given post ID with populated likedBy user info
@@ -90,6 +99,9 @@ export const likedByUser = async (req, res) => {
   try {
     const userId = req.user._id;
     const postId = req.params.postid;
+    if (!postId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const like = await Like.findOne({
       likedBy: userId,
       post: postId,
@@ -101,5 +113,38 @@ export const likedByUser = async (req, res) => {
     return res.status(200).json({ isLiked: true });
   } catch (error) {
     return res.status(500).json({ message: "something went wrong" });
+  }
+};
+
+export const getAllLikesOfComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    if (!commentId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    // Check if comment exists
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Get all likes for this comment
+    const likes = await Like.find({ comment: commentId }).populate(
+      "likedBy",
+      "username avatar"
+    );
+
+    const totalLikes = likes.length;
+
+    return res.status(200).json({
+      message: "Likes fetched successfully",
+      totalLikes,
+      likes,
+    });
+  } catch (error) {
+    console.error("Error fetching likes of comment:", error);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Try again later" });
   }
 };

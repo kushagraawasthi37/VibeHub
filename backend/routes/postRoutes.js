@@ -18,35 +18,6 @@ import {
 
 const router = express.Router();
 
-router.post(
-  "/post",
-  isLoggedIn,
-  upload.fields([
-    { name: "imageContent", maxCount: 1 },
-    { name: "videoContent", maxCount: 1 },
-  ]),
-  postController.createPost
-);
-
-//Edit post
-router.post(
-  "/update/:postid",
-  isLoggedIn,
-  upload.fields([
-    { name: "imageContent", maxCount: 1 },
-    { name: "videoContent", maxCount: 1 },
-  ]),
-  postController.updatePost
-);
-
-//Edit Post page
-router.get("/edit/:postid", isLoggedIn, postController.editPostPage);
-
-//Delete Post
-router.post("/post-delete/:postid", isLoggedIn, postController.deletePost);
-
-//Updated Route
-
 //Post Like
 router.get("/like/:postid", isLoggedIn, likePost);
 router.get("/like/user/:postid", isLoggedIn, likedByUser);
@@ -60,5 +31,36 @@ router.get("/share/:postid", isLoggedIn, share);
 router.get("/savecount/:postid", saveCount);
 router.get("/save/user/:postid", isLoggedIn, isSavedByUser);
 router.get("/save/:postid", isLoggedIn, toggleSave);
+
+//Post Owner
+router.get("/owner/:postid", isLoggedIn, postController.getOwner);
+
+//Creating post
+router.post(
+  "/post",
+  isLoggedIn,
+  upload.fields([
+    { name: "imageContent", maxCount: 1 },
+    { name: "videoContent", maxCount: 1 },
+  ]),
+  postController.createPost
+);
+
+//Delete Post
+router.get("/post-delete/:postId", isLoggedIn, postController.deletePost);
+
+//Edit post
+router.post(
+  "/update/:postid",
+  isLoggedIn,
+  upload.fields([
+    { name: "imageContent", maxCount: 1 },
+    { name: "videoContent", maxCount: 1 },
+  ]),
+  postController.updatePost
+);
+
+//Get post by Id
+router.get("/post/:postid", postController.getPostById);
 
 export default router;

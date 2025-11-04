@@ -9,10 +9,6 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
-    coverImage: {
-      type: String,
-    },
-
     // Basic info
     username: {
       type: String,
@@ -53,6 +49,10 @@ const userSchema = new mongoose.Schema(
     privateAccount: {
       type: Boolean,
       default: false,
+    },
+
+    bio: {
+      type: String,
     },
 
     // Verification & tokens

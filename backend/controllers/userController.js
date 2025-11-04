@@ -4,58 +4,42 @@ import postModel from "../models/post.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import User from "../models/user.js";
 import Post from "../models/post.js";
+import { useId } from "react";
+import Like from "../models/like.js";
+import Connection from "../models/connection.js";
+import Comment from "../models/comment.js";
+import Saved from "../models/saved.js";
 
-// -------- PROFILE PAGE --------
-export const getProfile = async (req, res) => {
-  try {
-    const populatedUser = await userModel
-      .findById(req.user._id)
-      .populate({
-        path: "posts",
-        select: "content fileContent likes user date",
-        options: { sort: { date: -1 } }, // newest posts first
-        populate: { path: "user", select: "username avatar" },
-      })
-      .lean();
-
-    res.render("profile", {
-      user: populatedUser,
-      success_msg: res.locals.success_msg,
-      error_msg: res.locals.error_msg,
-      message: res.locals.message,
-    });
-  } catch (err) {
-    console.error("Profile load error:", err);
-    req.flash("error_msg", "Something went wrong. Please log in again.");
-    res.redirect("/login");
-  }
-};
-
-// -------- SEARCH PAGE --------
-export const searchPage = (req, res) => res.render("search-user");
-
+// -------- SEARCH USERS --------
 // -------- SEARCH USERS --------
 export const searchUsers = async (req, res) => {
   try {
     const searchTerm = req.body.username.trim();
+
     const escapeRegex = (text) =>
       text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
-    const users = await userModel.find({
-      username: { $regex: escapeRegex(searchTerm), $options: "i" },
-    });
+    const users = await userModel
+      .find({
+        username: { $regex: escapeRegex(searchTerm), $options: "i" },
+      })
+      .select("username name age avatar");
 
     if (!users.length) {
-      return res.render("search-user", {
+      return res.status(404).json({
+        success: false,
         message: `No results for "${searchTerm}"`,
+        users: [],
       });
     }
 
-    res.render("search-user", { users });
+    res.json({ success: true, users });
   } catch (err) {
     console.error("Search error:", err);
-    req.flash("error_msg", "Something went wrong. Please try again.");
-    res.redirect("/search/user");
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again.",
+    });
   }
 };
 
@@ -64,106 +48,39 @@ export const viewOtherProfile = async (req, res) => {
   try {
     const user = await userModel
       .findOne({ username: req.params.username })
-      .select("username name age avatar coverImage posts")
-      .populate({
-        path: "posts",
-        select: "content fileContent likes user date",
-        options: { sort: { date: -1 } },
-        populate: { path: "user", select: "username avatar" },
-      })
+      .select("username name age avatar coverImage")
       .lean();
 
-    if (!user) return res.status(404).send("User not found");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-    res.render("others_profile", {
-      user,
-      success_msg: res.locals.success_msg,
-      error_msg: res.locals.error_msg,
-      message: res.locals.message,
+    // Fetch posts separately with sorting and user populated
+    const posts = await postModel
+      .find({ user: user._id })
+      .select("content fileContent likes user date")
+      .populate({ path: "user", select: "username avatar" })
+      .sort({ date: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      user: { ...user, posts: posts || [] },
     });
   } catch (err) {
     console.error("View profile error:", err);
-    req.flash("error_msg", "Something went wrong. Please try again.");
-    res.redirect("/feed");
-  }
-};
-
-// -------- DELETE ACCOUNT PAGE --------
-export const deleteAccountPage = async (req, res) => {
-  try {
-    const user = await userModel.findById(req.user._id);
-    if (!user) return res.status(404).send("User not found");
-
-    res.render("deleteAccount", { user });
-  } catch (err) {
-    console.error("Delete account page error:", err);
-    req.flash("error_msg", "Something went wrong.");
-    res.redirect("/feed");
-  }
-};
-
-// -------- DELETE ACCOUNT ACTION --------
-export const deleteAccountAction = async (req, res) => {
-  try {
-    const { confirmCheck, confirmText } = req.body;
-    if (!confirmCheck || confirmText !== "DELETE") {
-      return res.status(400).send("You must confirm deletion");
-    }
-
-    const deletedUser = await userModel.findByIdAndDelete(req.user._id);
-    if (!deletedUser) return res.status(404).send("User not found");
-
-    await postModel.deleteMany({ user: deletedUser._id });
-
-    req.flash(
-      "success_msg",
-      "Account and all your posts deleted successfully."
-    );
-    res.redirect("/login");
-  } catch (err) {
-    console.error("Delete account action error:", err);
-    req.flash("error_msg", "Something went wrong. Please try again.");
-    res.redirect("/feed");
-  }
-};
-
-// -------- UPLOAD PROFILE PHOTO --------
-export const uploadProfilephoto = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).send("No file uploaded");
-
-    const uploaded = await uploadOnCloudinary(req.file.path);
-
-    await userModel.findByIdAndUpdate(req.user._id, {
-      avatar: uploaded.secure_url,
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again.",
     });
-    res.redirect("/profile");
-  } catch (err) {
-    console.error("Avatar upload error:", err);
-    req.flash("error_msg", "Error uploading avatar");
-    res.redirect("/profile");
   }
 };
 
-// -------- UPDATE COVER IMAGE --------
-export const updateUsercoverImage = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).send("No cover image uploaded");
+//Updated routes
 
-    const uploaded = await uploadOnCloudinary(req.file.path);
-
-    await userModel.findByIdAndUpdate(req.user._id, {
-      coverImage: uploaded.secure_url,
-    });
-    res.redirect("/profile");
-  } catch (err) {
-    console.error("Cover image update error:", err);
-    req.flash("error_msg", "Error updating cover image");
-    res.redirect("/profile");
-  }
-};
-
-// -------- FEED PAGE --------
+// feed page
 export const getFeed = async (req, res) => {
   try {
     let posts = await Post.find({ videoContent: { $ne: null } })
@@ -253,5 +170,201 @@ export const currentUser = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json("Something went wrong.Try again later");
+  }
+};
+
+//Get current user by id
+export const currentUserById = async (req, res) => {
+  try {
+    const { userid } = req.params;
+    // console.log(user.username);
+    if (!userid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userid);
+
+    if (!user) {
+      return res.status(403).json({ message: "Can't find user" });
+    }
+    return res.status(200).json({
+      message: "Current user fetched successfully",
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("Something went wrong.Try again later");
+  }
+};
+
+//All Video post of user
+export const userAllVideoPost = async (req, res) => {
+  try {
+    const { adminid } = req.params;
+    if (!adminid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    let posts = await Post.find({
+      user: adminid,
+      videoContent: { $ne: null },
+    })
+      .populate({
+        path: "user",
+        select: "avatar coverImage username privateAccount",
+        match: { privateAccount: false },
+      })
+      .sort({ createdAt: -1 });
+
+    posts = posts.filter((post) => post.user !== null);
+    return res.status(200).json({
+      message: "All public posts with video fetched successfully",
+      posts,
+    });
+  } catch (err) {
+    console.error("Feed load error:", err);
+    return res.status(500).json({
+      message: "Something went wrong. Try again later",
+    });
+  }
+};
+
+//All Post of user
+export const userAllPost = async (req, res) => {
+  try {
+    const { adminid } = req.params;
+    let posts = await Post.find({
+      user: adminid,
+    })
+      .populate({
+        path: "user",
+        select: "avatar coverImage username privateAccount",
+        match: { privateAccount: false },
+      })
+      .sort({ createdAt: -1 });
+
+    posts = posts.filter((post) => post.user !== null);
+    return res.status(200).json({
+      message: "All public posts with video fetched successfully",
+      posts,
+    });
+  } catch (err) {
+    console.error("Feed load error:", err);
+    return res.status(500).json({
+      message: "Something went wrong. Try again later",
+    });
+  }
+};
+
+//Is current user is owner of page
+export const isCurrentUserIsOwner = async (req, res) => {
+  try {
+    const { adminid } = req.params;
+    const userId = req.user._id;
+
+    // console.log("User id ", userId);
+    // console.log("Admin id ", adminid);
+
+    // Safely convert both to strings and compare
+    const isOwner = adminid?.toString() === userId.toString();
+
+    return res.status(200).json(isOwner);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong. Try again later." });
+  }
+};
+
+//Updating user details
+export const updateDetails = async (req, res) => {
+  try {
+    const { userid } = req.params;
+    if (!userid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = await User.findById(userid);
+
+    if (!user) {
+      return res.status(403).json({ message: "Login Again" });
+    }
+
+    const { name, bio } = req.body;
+    const avatar = req.file;
+    // console.log("hit");
+
+    if (!avatar && !name?.trim() && !bio?.trim()) {
+      return res.status(401).json({
+        message: "Atleast one field  required",
+      });
+    }
+
+    if (bio) {
+      user.bio = bio;
+    }
+    if (name) {
+      user.name = name;
+    }
+
+    if (avatar) {
+      const uploaded = await uploadOnCloudinary(avatar.path);
+      user.avatar = uploaded.secure_url;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "User details updated",
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Details updating failed.Try again later",
+    });
+  }
+};
+
+// delete account permanently
+export const deleteAccountAction = async (req, res) => {
+  try {
+    const user = req.user;
+
+    const { userid } = req.params;
+    if (!userid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const owner = await User.findById(userid);
+
+    if (!owner || owner._id.toString() !== user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Only owner can delete the account" });
+    }
+
+    const { confirmCheck, confirmText, confirmUserName } = req.body;
+    if (confirmUserName != user.username) {
+      return res
+        .status(400)
+        .json({ message: "You must fill correct details to confirm deletion" });
+    }
+
+    const deletedUser = await userModel.findByIdAndDelete(user._id);
+    if (!deletedUser) return res.status(404).send("User not found");
+
+    await postModel.deleteMany({ user: deletedUser._id });
+    await Like.deleteMany({ likedBy: deletedUser._id });
+    await Comment.deleteMany({ owner: deletedUser._id });
+    await Saved.deleteMany({ user: deletedUser._id });
+    await Connection.deleteMany({
+      $or: [{ follower: deletedUser._id }, { Admin: deletedUser._id }],
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Account and all your posts deleted successfully." });
+  } catch (err) {
+    console.error("Delete account action error:", err);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong.Try again later" });
   }
 };

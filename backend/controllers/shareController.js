@@ -3,6 +3,9 @@ import Share from "../models/share.js";
 export const shareCount = async (req, res) => {
   try {
     const { postid } = req.params;
+    if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const shareCount = await Share.countDocuments({
       post: postid,
     });
@@ -18,8 +21,10 @@ export const share = async (req, res) => {
   try {
     const userId = req.user?._id;
     const { postid } = req.params;
-
-    console.log(postid);
+    if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    // console.log(postid);
     const share = await Share.create({
       user: userId,
       post: postid,

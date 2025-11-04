@@ -6,7 +6,9 @@ import mongoose from "mongoose";
 export const saveCount = async (req, res) => {
   try {
     const { postid } = req.params;
-
+ if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     if (!mongoose.Types.ObjectId.isValid(postid)) {
       return res.status(400).json({ message: "Invalid postid" });
     }
@@ -25,6 +27,9 @@ export const isSavedByUser = async (req, res) => {
   try {
     const userId = req.user._id;
     const { postid } = req.params;
+     if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     let isSaved = false;
 
     if (!mongoose.Types.ObjectId.isValid(postid)) {
@@ -48,6 +53,9 @@ export const toggleSave = async (req, res) => {
   try {
     const userId = req.user._id;
     const { postid } = req.params;
+     if (!postid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!mongoose.Types.ObjectId.isValid(postid)) {
       return res.status(400).json({ message: "Invalid postid" });

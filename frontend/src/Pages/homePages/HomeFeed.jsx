@@ -11,12 +11,13 @@ import { toast } from "react-toastify";
 import Loader from "../../components/Loader.jsx";
 import PostCard from "../../components/PostCard.jsx";
 import { useNavigate } from "react-router-dom";
+import SettingsMenu from "../../components/SettingsMenu.jsx";
 
 const HomeFeed = () => {
   const navigate = useNavigate();
-  const [content, setContent] = useState([1, 2, 3, 4, 5, 6]);
+  const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
-  const getFeed = async () => {
+  const getHome = async () => {
     try {
       setLoading(true);
       const response = await axios.get("/api/users/home", {
@@ -37,7 +38,7 @@ const HomeFeed = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      await getFeed();
+      await getHome();
     };
 
     fetchData();
@@ -105,11 +106,11 @@ const HomeFeed = () => {
                 </div>
 
                 <div className="flex space-x-5 text-gray-300">
-                  <Heart className="w-6 h-6 cursor-pointer hover:text-pink-500 transition" />
                   <MessageCircle
                     onClick={() => navigate("/messages")}
                     className="w-6 h-6 cursor-pointer hover:text-purple-400 transition"
                   />
+                  <SettingsMenu />{" "}
                 </div>
               </motion.div>
 

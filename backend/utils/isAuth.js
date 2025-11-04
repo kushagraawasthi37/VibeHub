@@ -18,7 +18,7 @@ export const isLoggedIn = async (req, res, next) => {
     // 🧩 Find user
     const user = await User.findById(decoded.id);
     if (!user) {
-      console.log("User not found in authentication");
+      // console.log("User not found in authentication");
       return res.status(403).json({ message: "User not found." });
     }
 

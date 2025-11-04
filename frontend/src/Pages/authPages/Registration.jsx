@@ -118,6 +118,7 @@ const Registration = () => {
           Join VibeHub
         </h1>
         <motion.img
+          onClick={() => navigate("/")}
           src={logo}
           alt="VibeHub Logo"
           initial={{ rotate: -15, scale: 0 }}

@@ -7,6 +7,7 @@ import Loading from "../../components/Loading";
 import axiosInstance from "../../contexts/axiosInstance";
 import LeftNavbar from "../../components/LeftNavbar";
 import BottomNavbar from "../../components/BottomNavbar";
+import { ArrowLeft } from "lucide-react";
 
 const CreatePost = () => {
   const navigater = useNavigate();
@@ -22,6 +23,10 @@ const CreatePost = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (videoFile) {
+        toast.error("You can upload either an image or a video, not both!");
+        return;
+      }
       setImageFile(file);
       setPreviewImage(URL.createObjectURL(file));
     }
@@ -30,6 +35,10 @@ const CreatePost = () => {
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (imageFile) {
+        toast.error("You can upload either an image or a video, not both!");
+        return;
+      }
       setVideoFile(file);
       setPreviewVideo(URL.createObjectURL(file));
     }
@@ -42,10 +51,6 @@ const CreatePost = () => {
       formData.append("content", content);
       if (imageFile) formData.append("imageContent", imageFile);
       if (videoFile) formData.append("videoContent", videoFile);
-
-      console.log(imageFile);
-      console.log(videoFile);
-      console.log(content);
 
       const response = await axiosInstance.post("/api/posts/post", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -95,6 +100,18 @@ const CreatePost = () => {
           className="absolute bottom-[-10%] right-[-10%] w-60 h-60 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl"
         ></motion.div>
 
+        {/* 🔙 Back Button */}
+        <motion.button
+          onClick={() => navigater("/")}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 200 }}
+          className="absolute top-6 left-6 sm:left-26 flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl border border-white/20 text-white font-medium shadow-md"
+        >
+          <ArrowLeft size={20} />
+          Back
+        </motion.button>
+
         {/* Header */}
         <motion.div
           initial={{ y: -30, opacity: 0 }}
@@ -125,22 +142,20 @@ const CreatePost = () => {
           {/* Text content */}
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)} // Add state update on change
+            onChange={(e) => setContent(e.target.value)}
             rows="4"
             placeholder="What's on your mind?"
             className="p-3 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 outline-none transition-all duration-300 resize-none"
           />
 
           {/* Image Upload */}
-          <div className="flex flex-col items-center justify-center border-2  border-purple-400 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer">
+          <div className="flex flex-col items-center justify-center border-2 border-purple-400 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer">
             <input
               type="file"
               accept="image/*"
               className="hidden"
               id="imageInput"
-              onChange={(e) => {
-                handleImageChange(e);
-              }}
+              onChange={handleImageChange}
             />
             <label htmlFor="imageInput" className="cursor-pointer text-center">
               {previewImage ? (
@@ -166,15 +181,13 @@ const CreatePost = () => {
           </div>
 
           {/* Video Upload */}
-          <div className="flex flex-col items-center justify-center border-2 b border-pink-400 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer">
+          <div className="flex flex-col items-center justify-center border-2 border-pink-400 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer">
             <input
               type="file"
               accept="video/*"
               className="hidden"
               id="videoInput"
-              onChange={(e) => {
-                handleVideoChange(e);
-              }}
+              onChange={handleVideoChange}
             />
             <label htmlFor="videoInput" className="cursor-pointer text-center">
               {previewVideo ? (

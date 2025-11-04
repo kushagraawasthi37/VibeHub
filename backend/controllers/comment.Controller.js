@@ -1,10 +1,15 @@
 import Comment from "../models/comment.js";
+import Like from "../models/like.js";
 import Post from "../models/post.js";
 
 export const AddComment = async (req, res) => {
   try {
     const { content } = req.body;
     const { postId } = req.params;
+
+    if (!postId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!content) {
       return res.status(400).json({ message: "Comment content required" });
@@ -36,7 +41,13 @@ export const AddComment = async (req, res) => {
 export const deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
+    // console.log("hit");
+    // console.log("Comment Id ", commentId);
+    // console.log("User id ", req.user._id);
 
+    if (!commentId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const comment = await Comment.findOne({
       owner: req.user._id,
       _id: commentId,
@@ -45,6 +56,8 @@ export const deleteComment = async (req, res) => {
     if (!comment) {
       return res.status(403).json({ message: "Only owner can delete comment" });
     }
+
+    await Like.findOneAndDelete({ comment: comment._id });
 
     await Comment.findByIdAndDelete(comment._id);
     return res.status(200).json({ message: "Comment deleted successfully" });
@@ -60,6 +73,10 @@ export const editComment = async (req, res) => {
   try {
     const { commentId } = req.params;
     const { content } = req.body;
+
+    if (!commentId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!content) {
       return res.status(400).json({ message: "Comment content is required" });
@@ -87,13 +104,18 @@ export const editComment = async (req, res) => {
 export const allComment = async (req, res) => {
   try {
     const { postId } = req.params;
+    if (!postId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const comments = await Comment.find({ post: postId })
+      .populate("owner", "username avatar")
+      .sort({ createdAt: -1 });
 
-    const total = await Comment.countDocuments({ post: postId });
-    // console.log("Comment fectched");
+    const total = comments.length;
 
     return res
       .status(200)
-      .json({ message: "All Comment fetched Successfully", total });
+      .json({ message: "All comments fetched", comments, total });
   } catch (error) {
     return res.status(500).json({ message: "Something went wrong" });
   }

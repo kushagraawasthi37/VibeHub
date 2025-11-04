@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import Loading from "../../components/Loading";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const resetPasswordLink = async (e) => {
@@ -71,6 +72,7 @@ const ForgotPassword = () => {
         </h1>
         <motion.img
           src={logo}
+          onClick={() => navigate("/")}
           alt="VibeHub Logo"
           initial={{ rotate: -20, scale: 0 }}
           animate={{ rotate: 0, scale: 1 }}

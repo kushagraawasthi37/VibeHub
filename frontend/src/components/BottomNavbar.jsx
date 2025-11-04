@@ -1,33 +1,20 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Home, Search, PlusSquare, PlayCircle, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { userDataContext } from "../contexts/UserContext";
+import { toast } from "react-toastify";
 
 const BottomNavbar = () => {
   const navigate = useNavigate();
-  const navItems = [
-    { icon: <Home className="w-6 h-6" />, label: "Home", navLocation: "/" },
-    {
-      icon: <Search className="w-6 h-6" />,
-      label: "Search",
-      navLocation: "/search",
-    },
-    {
-      icon: <PlusSquare className="w-6 h-6" />,
-      label: "Create",
-      navLocation: "/createpost",
-    },
-    {
-      icon: <PlayCircle className="w-6 h-6" />,
-      label: "Reels",
-      navLocation: "/feed",
-    },
-    {
-      icon: <User className="w-6 h-6" />,
-      label: "Profile",
-      navLocation: "/profile",
-    },
-  ];
+  const { userData, getCurrentUser } = useContext(userDataContext);
+
+  useEffect(() => {
+    const fetch = async () => {
+      await getCurrentUser();
+    };
+    fetch();
+  }, []);
 
   return (
     <motion.div
@@ -38,30 +25,130 @@ const BottomNavbar = () => {
                  backdrop-blur-2xl border-t border-white/10 shadow-[0_-2px_15px_rgba(168,85,247,0.3)] 
                  flex items-center justify-around py-3 sm:py-4 z-50 sm:hidden"
     >
-      {navItems.map((item, index) => (
-        <motion.button
-          onClick={() => navigate(item.navLocation)}
-          key={index}
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 250 }}
-          className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      {/* Home */}
+      <motion.button
+        onClick={() => navigate("/")}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 250 }}
+        className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      >
+        <motion.div
+          whileHover={{
+            background:
+              "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
+          }}
+          transition={{ duration: 0.25 }}
         >
-          <motion.div
-            whileHover={{
-              background:
-                "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
-            }}
-            transition={{ duration: 0.25 }}
-          >
-            {item.icon}
-          </motion.div>
-          <span className="text-[10px] sm:text-xs mt-1">{item.label}</span>
-        </motion.button>
-      ))}
+          <Home className="w-6 h-6" />
+        </motion.div>
+        <span className="text-[10px] sm:text-xs mt-1">Home</span>
+      </motion.button>
+
+      {/* Search */}
+      <motion.button
+        onClick={() => navigate("/search")}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 250 }}
+        className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      >
+        <motion.div
+          whileHover={{
+            background:
+              "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
+          }}
+          transition={{ duration: 0.25 }}
+        >
+          <Search className="w-6 h-6" />
+        </motion.div>
+        <span className="text-[10px] sm:text-xs mt-1">Search</span>
+      </motion.button>
+
+      {/* Create */}
+      <motion.button
+        onClick={() => {
+          if (!userData) {
+            return toast.error("Login for uploading post");
+          }
+          navigate("/createpost");
+        }}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 250 }}
+        className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      >
+        <motion.div
+          whileHover={{
+            background:
+              "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
+          }}
+          transition={{ duration: 0.25 }}
+        >
+          <PlusSquare className="w-6 h-6" />
+        </motion.div>
+        <span className="text-[10px] sm:text-xs mt-1">Create</span>
+      </motion.button>
+
+      {/* Reels */}
+      <motion.button
+        onClick={() => navigate("/feed")}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 250 }}
+        className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      >
+        <motion.div
+          whileHover={{
+            background:
+              "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
+          }}
+          transition={{ duration: 0.25 }}
+        >
+          <PlayCircle className="w-6 h-6" />
+        </motion.div>
+        <span className="text-[10px] sm:text-xs mt-1">Reels</span>
+      </motion.button>
+
+      {/* Profile */}
+      <motion.button
+        onClick={() => {
+          if (!userData) {
+            return toast.error("Login for profile");
+          }
+          navigate(`/profile/${userData?._id}`);
+        }}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 250 }}
+        className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-100"
+      >
+        <motion.div
+          whileHover={{
+            background:
+              "linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(236,72,153,0.6))",
+          }}
+          transition={{ duration: 0.25 }}
+        >
+          <User className="w-6 h-6" />
+        </motion.div>
+        <span className="text-[10px] sm:text-xs mt-1">Profile</span>
+      </motion.button>
     </motion.div>
   );
 };

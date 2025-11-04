@@ -5,14 +5,19 @@ import Registration from "./Pages/authPages/Registration";
 import Login from "./Pages/authPages/Login";
 import AfterGoogleAuthDetails from "./Pages/authPages/AfterGoogleAuth";
 import ForgotPassword from "./Pages/authPages/ForgetPassword";
-import ResetPassword from "./Pages/authPages/ResetPassword";
 import VerifyEmail from "./utils/AuthVerification";
-import Loader from "./components/Loader";
 import VerifyResetToken from "./utils/VeriffyResetToken";
 import CreatePost from "./Pages/postPages/Createpost";
 import HomeFeed from "./Pages/homePages/HomeFeed";
-import Loading from "./components/Loading";
 import SavedPosts from "./Pages/homePages/SavedPosts";
+import ReelPage from "./Pages/homePages/ReelPage";
+import Search from "./Pages/homePages/Search";
+import ProfilePage from "./Pages/userPages/ProfilePage";
+import EditProfile from "./Pages/userPages/EditProfile";
+import DeleteAccountPage from "./Pages/userPages/DeleteAccountPage";
+import EditPostPage from "./Pages/postPages/EditPostPage";
+import CommentsSection from "./Pages/postPages/CommentSection";
+import SinglePost from "./Pages/userPages/SinglePost";
 
 const App = () => {
   return (
@@ -20,11 +25,11 @@ const App = () => {
       <ToastContainer />
       <Router>
         <Routes>
-          <Route path="/" element={<HomeFeed />} />
-
-          {/* // Post Routes */}
+          {/* Post Routes */}
           <Route path="/createpost" element={<CreatePost />} />
-          <Route path="/comment" element={<Loading />} />
+          <Route path="/post/:postid" element={<SinglePost />} />
+          <Route path="/post/edit/:postid" element={<EditPostPage />} />
+          <Route path="/comment/:postId" element={<CommentsSection />} />
 
           {/* Auth Route */}
           <Route path="/signup" element={<Registration />} />
@@ -37,8 +42,20 @@ const App = () => {
             element={<AfterGoogleAuthDetails />}
           />
 
-          {/* Post Route */}
+          {/* Home Route */}
+
+          <Route path="/" element={<HomeFeed />} />
           <Route path="/saved" element={<SavedPosts />} />
+          <Route path="/feed" element={<ReelPage />} />
+          <Route path="/search" element={<Search />} />
+
+          {/* User Profile */}
+          <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/profile/editprofile/:id" element={<EditProfile />} />
+          <Route
+            path="/profile/delete-account/:username/:id"
+            element={<DeleteAccountPage />}
+          />
         </Routes>
       </Router>
     </div>

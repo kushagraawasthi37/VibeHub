@@ -115,6 +115,7 @@ const Login = () => {
           Welcome Back
         </h1>
         <motion.img
+          onClick={() => navigate("/")}
           src={logo}
           alt="VibeHub Logo"
           initial={{ rotate: -20, scale: 0 }}
