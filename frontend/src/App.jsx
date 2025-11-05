@@ -18,8 +18,11 @@ import DeleteAccountPage from "./Pages/userPages/DeleteAccountPage";
 import EditPostPage from "./Pages/postPages/EditPostPage";
 import CommentsSection from "./Pages/postPages/CommentSection";
 import SinglePost from "./Pages/userPages/SinglePost";
+import ConversationPage from "./Pages/userPages/ConversationPage";
+import MessagePage from "./Pages/userPages/MessagePage";
 
 const App = () => {
+
   return (
     <div>
       <ToastContainer />
@@ -55,6 +58,11 @@ const App = () => {
           <Route
             path="/profile/delete-account/:username/:id"
             element={<DeleteAccountPage />}
+          />
+          <Route path="/conversations" element={<ConversationPage />} />
+          <Route
+            path="/message/:otherParticipantId"
+            element={<MessagePage />}
           />
         </Routes>
       </Router>

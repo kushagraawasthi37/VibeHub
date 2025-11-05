@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
   LogIn,
+  Bookmark,
+  MessageCircle,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
@@ -156,15 +158,39 @@ const LeftNavbar = () => {
 
           {/* Message */}
           <motion.button
-            // onClick={() => navigate("/messages")}
             whileTap={{ scale: 0.9 }}
             className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-300"
           >
             <motion.div whileHover={{ scale: 1.1, color: "#a855f7" }}>
-              <Share2 className="w-6 h-6" />
+              <MessageCircle
+                onClick={() => {
+                  if (!userData) return toast.error("login for Message");
+                  navigate("/conversations");
+                }}
+                className="w-6 h-6 cursor-pointer hover:text-purple-400 transition"
+              />
             </motion.div>
             <span className="text-[10px] sm:text-xs mt-1 opacity-80">
               Message
+            </span>
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className="flex flex-col items-center text-gray-300 hover:text-white transition-all duration-300"
+          >
+            <motion.div whileHover={{ scale: 1.1, color: "#a855f7" }}>
+              <Bookmark
+                onClick={() => {
+                  if (!userData)
+                    return toast.error("login for viewing saved video");
+                  navigate("/saved");
+                }}
+                className="w-6 h-6 cursor-pointer hover:text-purple-400 transition"
+              />
+            </motion.div>
+            <span className="text-[10px] sm:text-xs mt-1 opacity-80">
+              Saved 
             </span>
           </motion.button>
         </div>

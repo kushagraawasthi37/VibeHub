@@ -4,7 +4,6 @@ import profile from "../../assets/avatar.png";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../contexts/axiosInstance";
 import { userDataContext } from "../../contexts/UserContext";
-import { linkWithCredential } from "firebase/auth";
 import Loader from "../../components/Loader";
 import BottomNavbar from "../../components/BottomNavbar";
 import LeftNavbar from "../../components/LeftNavbar";
@@ -119,6 +118,14 @@ export default function ProfilePage() {
     }
   };
 
+  const messageHandler = async () => {
+    console.log("clicked");
+    if (!userData) {
+      return toast.error("Login for message");
+    }
+    navigate(`/message/${id}`);
+  };
+
   useEffect(() => {
     const fetch = async () => {
       await checkFollower();
@@ -206,8 +213,11 @@ export default function ProfilePage() {
                     >
                       Edit Profile
                     </button>
-                    <button className=" flex-1 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-sm font-medium hover:shadow-[0_0_10px_rgba(255,255,255,0.15)] transition-all duration-300">
-                      Share profile
+                    <button
+                      onClick={messageHandler}
+                      className=" flex-1 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-sm font-medium hover:shadow-[0_0_10px_rgba(255,255,255,0.15)] transition-all duration-300"
+                    >
+                      Message
                     </button>{" "}
                   </>
                 ) : (
@@ -223,7 +233,9 @@ export default function ProfilePage() {
                           {isFollowed ? "Following" : "Follow"}
                         </button>
                         <button
-                          disabled
+                          onClick={() => {
+                            messageHandler();
+                          }}
                           className=" flex-1 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-sm font-medium hover:shadow-[0_0_10px_rgba(255,255,255,0.15)] transition-all duration-300"
                         >
                           Message

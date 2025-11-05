@@ -25,6 +25,7 @@ import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import messageRoutes from "./routes/messageRoute.js";
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/comment", commentRoutes);
+app.use("/api/message", messageRoutes);
 
 // ✅ Fallback route for unknown API paths
 app.use("*", (req, res) => {

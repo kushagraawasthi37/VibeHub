@@ -121,6 +121,7 @@ const BottomNavbar = () => {
         </motion.div>
         <span className="text-[10px] sm:text-xs mt-1">Reels</span>
       </motion.button>
+      
 
       {/* Profile */}
       <motion.button

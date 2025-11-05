@@ -4,14 +4,12 @@ import postModel from "../models/post.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import User from "../models/user.js";
 import Post from "../models/post.js";
-import { useId } from "react";
 import Like from "../models/like.js";
 import Connection from "../models/connection.js";
 import Comment from "../models/comment.js";
 import Saved from "../models/saved.js";
 
-// -------- SEARCH USERS --------
-// -------- SEARCH USERS --------
+// search user
 export const searchUsers = async (req, res) => {
   try {
     const searchTerm = req.body.username.trim();
@@ -43,7 +41,7 @@ export const searchUsers = async (req, res) => {
   }
 };
 
-// -------- VIEW OTHER USER PROFILE --------
+// VIEW OTHER USER PROFILE
 export const viewOtherProfile = async (req, res) => {
   try {
     const user = await userModel
@@ -366,5 +364,21 @@ export const deleteAccountAction = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Something went wrong.Try again later" });
+  }
+};
+
+// ✅ getOtherUsers.js
+export const getOtherUsers = async (req, res) => {
+  try {
+    const otherUsers = await User.find({ _id: { $ne: req.user._id } });
+    res.status(200).json({
+      message: "Other users fetched successfully",
+      otherUsers,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Something went wrong. Try again later",
+    });
   }
 };

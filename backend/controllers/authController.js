@@ -361,7 +361,9 @@ export const resetForgotPassword = async (req, res) => {
         .json({ message: "Invalid or expired reset link." });
     }
 
-    user.password = req.body.newPassword;
+    const hashedPassowrd = await bcrypt.hash(req.body.newPassword, 10);
+
+    user.password = hashedPassowrd;
     user.forgotPasswordToken = undefined;
     user.forgotPasswordExpiry = undefined;
     await user.save();

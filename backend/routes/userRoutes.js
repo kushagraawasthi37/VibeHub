@@ -10,9 +10,12 @@ import {
   isFollower,
 } from "../controllers/connection.Controller.js";
 import { userSavedContent } from "../controllers/savedController.js";
+import {
+  deleteConversation,
+  getALLConversation,
+} from "../controllers/message.controller.js";
 
 const router = express.Router();
-
 
 router.post("/search/user", userController.searchUsers);
 
@@ -66,4 +69,15 @@ router.post(
   isLoggedIn,
   userController.deleteAccountAction
 );
+
+//Get otherusers
+router.get("/getotherusers", isLoggedIn, userController.getOtherUsers);
+//Get user all conversations
+router.get("/getallconversations", isLoggedIn, getALLConversation);
+router.delete(
+  "/conversation/delete/:conversationId",
+  isLoggedIn,
+  deleteConversation
+);
+
 export default router;

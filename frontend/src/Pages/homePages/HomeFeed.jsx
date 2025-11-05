@@ -12,11 +12,13 @@ import Loader from "../../components/Loader.jsx";
 import PostCard from "../../components/PostCard.jsx";
 import { useNavigate } from "react-router-dom";
 import SettingsMenu from "../../components/SettingsMenu.jsx";
+import { userDataContext } from "../../contexts/UserContext.jsx";
 
 const HomeFeed = () => {
   const navigate = useNavigate();
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { userData } = useContext(userDataContext);
   const getHome = async () => {
     try {
       setLoading(true);
@@ -106,8 +108,25 @@ const HomeFeed = () => {
                 </div>
 
                 <div className="flex space-x-5 text-gray-300">
+                  <div>
+                    <Bookmark
+                      onClick={() => {
+                        if (!userData)
+                          return toast.error("login for viewing saved video");
+                        navigate("/saved");
+                      }}
+                      className={`w-6 h-6 cursor-pointer transition ${"text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.6)]  fill= currentColor"}`}
+                    />
+                    <span className="text-xs text-gray-400 mt-0.5 group-hover:text-yellow-300 transition">
+                      Saved
+                    </span>
+                  </div>
                   <MessageCircle
-                    onClick={() => navigate("/messages")}
+                    onClick={() => {
+                      if (!userData)
+                        return toast.error("login for viewing saved video");
+                      navigate("/conversations");
+                    }}
                     className="w-6 h-6 cursor-pointer hover:text-purple-400 transition"
                   />
                   <SettingsMenu />{" "}
