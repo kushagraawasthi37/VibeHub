@@ -5,6 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, User } from "lucide-react";
 import Loading from "../../components/Loading";
 import profile from "../../assets/avatar.png";
+import {
+  Send,
+  ArrowLeft,
+  MoreVertical,
+  Trash2,
+  LeafyGreen,
+} from "lucide-react";
 
 const SearchPage = () => {
   const [query, setQuery] = useState("");
@@ -70,13 +77,19 @@ const SearchPage = () => {
       />
 
       {/* Title */}
-      <motion.h1
+      <motion.h1 
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="text-3xl sm:text-4xl font-extrabold tracking-wide mt-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg"
+        className="text-3xl flex gap-3 sm:text-4xl font-extrabold tracking-wide mt-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg"
       >
-        Search VibeHub Users 🔍
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3  bg-white/10 rounded-full hover:bg-white/20 transition"
+        >
+          <ArrowLeft className="w-6 h-6 text-white" />
+        </button>
+        <p>Search VibeHub Users </p>
       </motion.h1>
 
       {/* Search Box */}

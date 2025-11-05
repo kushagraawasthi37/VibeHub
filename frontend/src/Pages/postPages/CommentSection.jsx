@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../../contexts/axiosInstance.js";
-import { userDataContext } from "../../contexts/UserContext";
+import { userDataContext } from "../../contexts/UserContext.jsx";
 import { toast } from "react-toastify";
 import { Pencil, Trash2, Heart, Send, X } from "lucide-react";
 import Loading from "../../components/Loading.jsx";
