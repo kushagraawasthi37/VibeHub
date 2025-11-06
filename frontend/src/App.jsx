@@ -7,7 +7,7 @@ import AfterGoogleAuthDetails from "./Pages/authPages/AfterGoogleAuth";
 import ForgotPassword from "./Pages/authPages/ForgetPassword";
 import VerifyEmail from "./utils/AuthVerification";
 import VerifyResetToken from "./utils/VeriffyResetToken";
-import CreatePost from "./Pages/postPages/Createpost";
+import CreatePost from "./Pages/postPages/CreatePost";
 import HomeFeed from "./Pages/homePages/HomeFeed";
 import SavedPosts from "./Pages/homePages/SavedPosts";
 import ReelPage from "./Pages/homePages/ReelPage";
