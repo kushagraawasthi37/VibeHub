@@ -32,7 +32,11 @@ const app = express();
 // ✅ CORS (for React frontend)
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173", // React dev server
+    origin:
+      process.env.CORS_ORIGIN ||
+      "http://localhost:5173" ||
+      "https://vibehub-frontend.onrender.com/",
+    // React dev server
     credentials: true, // Allow cookies / tokens
   })
 );
