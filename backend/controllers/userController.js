@@ -1,13 +1,12 @@
-// controllers/profileController.js
-import userModel from "../models/user.js";
-import postModel from "../models/post.js";
+import mongoose from "mongoose";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import User from "../models/user.js";
 import Post from "../models/post.js";
 import Like from "../models/like.js";
 import Connection from "../models/connection.js";
+import Saved from "../models/Saved.js";
+import Share from "../models/share.js";
 import Comment from "../models/comment.js";
-import Saved from "../models/saved.js";
 
 // search user
 export const searchUsers = async (req, res) => {
@@ -17,11 +16,9 @@ export const searchUsers = async (req, res) => {
     const escapeRegex = (text) =>
       text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
-    const users = await userModel
-      .find({
-        username: { $regex: escapeRegex(searchTerm), $options: "i" },
-      })
-      .select("username name age avatar");
+    const users = await User.find({
+      username: { $regex: escapeRegex(searchTerm), $options: "i" },
+    }).select("username name age avatar");
 
     if (!users.length) {
       return res.status(404).json({
@@ -44,8 +41,7 @@ export const searchUsers = async (req, res) => {
 // VIEW OTHER USER PROFILE
 export const viewOtherProfile = async (req, res) => {
   try {
-    const user = await userModel
-      .findOne({ username: req.params.username })
+    const user = await User.findOne({ username: req.params.username })
       .select("username name age avatar coverImage")
       .lean();
 
@@ -56,8 +52,7 @@ export const viewOtherProfile = async (req, res) => {
     }
 
     // Fetch posts separately with sorting and user populated
-    const posts = await postModel
-      .find({ user: user._id })
+    const posts = await Post.find({ user: user._id })
       .select("content fileContent likes user date")
       .populate({ path: "user", select: "username avatar" })
       .sort({ date: -1 })
@@ -76,56 +71,192 @@ export const viewOtherProfile = async (req, res) => {
   }
 };
 
-//Updated routes
-
-// feed page
-export const getFeed = async (req, res) => {
+// feed page Logged In
+export const getFeedLoggedIn = async (req, res) => {
   try {
+    const userId = req.user?._id;
+    // Step 1️⃣ — Fetch only public posts + populate basic user info
     let posts = await Post.find({ videoContent: { $ne: null } })
       .populate({
         path: "user",
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // use lean() for raw JSON = faster
 
+    // Filter out posts from deleted/private users
     posts = posts.filter((post) => post.user !== null);
+
+    // Get all postIds
+    const postIds = posts.map((p) => p._id);
+
+    // Step 2️⃣ — Fetch all stats in bulk (parallel)
+    const [likes, comments, saves, shares, userLikes, userSaves] =
+      await Promise.all([
+        Like.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalLikes: { $sum: 1 } } },
+        ]),
+        Comment.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalComments: { $sum: 1 } } },
+        ]),
+        Saved.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalSaves: { $sum: 1 } } },
+        ]),
+        Share.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalShares: { $sum: 1 } } },
+        ]),
+        Like.find({ likedBy: userId, post: { $in: postIds } }).select("post"),
+        Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
+      ]);
+
+    // Step 3️⃣ — Convert to lookup maps for O(1) merge
+    const likeMap = Object.fromEntries(
+      likes.map((l) => [l._id.toString(), l.totalLikes])
+    );
+    const commentMap = Object.fromEntries(
+      comments.map((c) => [c._id.toString(), c.totalComments])
+    );
+    const saveMap = Object.fromEntries(
+      saves.map((s) => [s._id.toString(), s.totalSaves])
+    );
+    const shareMap = Object.fromEntries(
+      shares.map((sh) => [sh._id.toString(), sh.totalShares])
+    );
+
+    const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
+    const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
+
+    // Step 4️⃣ — Merge stats into each post (O(n))
+    const finalPosts = posts.map((post) => {
+      const pid = post._id.toString();
+      return {
+        ...post,
+        stats: {
+          likes: likeMap[pid] || 0,
+          comments: commentMap[pid] || 0,
+          saves: saveMap[pid] || 0,
+          shares: shareMap[pid] || 0,
+          isLiked: likedPosts.has(pid),
+          isSaved: savedPosts.has(pid),
+        },
+      };
+    });
+
+    // Step 5️⃣ — Send final response
     return res.status(200).json({
-      message: "All public posts with video fetched successfully",
-      posts,
+      message: "Home feed loaded successfully 🚀",
+      posts: finalPosts,
     });
   } catch (err) {
-    console.error("Feed load error:", err);
+    console.error("Home load error:", err);
     return res.status(500).json({
-      message: "Something went wrong. Try again later",
+      message: "Something went wrong. Try again later.",
     });
   }
 };
 
+
 //Home page
-export const getHome = async (req, res) => {
+export const getHomeLoggedIn = async (req, res) => {
   try {
+    console.log("Home Hit Personal");
+    const userId = req.user?._id;
+    const page = Math.max(1, parseInt(req.query.page)) || 1;
+    const limit = Math.min(50, parseInt(req.query.limit)) || 10; // max 50 posts per page
+    const skip = (page - 1) * limit;
+
+    // Step 1️⃣ — Fetch paginated public posts + populate basic user info
     let posts = await Post.find()
       .populate({
         path: "user",
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     posts = posts.filter((post) => post.user !== null);
 
+    const postIds = posts.map((p) => p._id);
+
+    // Step 2️⃣ — Bulk fetch all stats
+    const [likes, comments, saves, shares, userLikes, userSaves] =
+      await Promise.all([
+        Like.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalLikes: { $sum: 1 } } },
+        ]),
+        Comment.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalComments: { $sum: 1 } } },
+        ]),
+        Saved.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalSaves: { $sum: 1 } } },
+        ]),
+        Share.aggregate([
+          { $match: { post: { $in: postIds } } },
+          { $group: { _id: "$post", totalShares: { $sum: 1 } } },
+        ]),
+        Like.find({ likedBy: userId, post: { $in: postIds } }).select("post"),
+        Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
+      ]);
+
+    // Step 3️⃣ — Convert stats to lookup maps
+    const likeMap = Object.fromEntries(
+      likes.map((l) => [l._id.toString(), l.totalLikes])
+    );
+    const commentMap = Object.fromEntries(
+      comments.map((c) => [c._id.toString(), c.totalComments])
+    );
+    const saveMap = Object.fromEntries(
+      saves.map((s) => [s._id.toString(), s.totalSaves])
+    );
+    const shareMap = Object.fromEntries(
+      shares.map((sh) => [sh._id.toString(), sh.totalShares])
+    );
+    const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
+    const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
+
+    // Step 4️⃣ — Merge stats into posts
+    const finalPosts = posts.map((post) => {
+      const pid = post._id.toString();
+      return {
+        ...post,
+        stats: {
+          likes: likeMap[pid] || 0,
+          comments: commentMap[pid] || 0,
+          saves: saveMap[pid] || 0,
+          shares: shareMap[pid] || 0,
+          isLiked: likedPosts.has(pid),
+          isSaved: savedPosts.has(pid),
+        },
+      };
+    });
+
+    // Step 5️⃣ — Return paginated response including page info
     return res.status(200).json({
-      message: "All public posts fetched successfully",
-      posts,
+      message: "Home feed loaded successfully 🚀",
+      posts: finalPosts,
+      page,
+      limit,
+      hasMore: posts.length === limit,
     });
   } catch (err) {
     console.error("Home load error:", err);
     return res.status(500).json({
-      message: "Something went wrong. Try again later",
+      message: "Something went wrong. Try again later.",
     });
   }
 };
+
 
 //Maintain privacy
 export const privacy = async (req, res) => {
@@ -153,18 +284,8 @@ export const privacy = async (req, res) => {
 //Get current user
 export const currentUser = async (req, res) => {
   try {
-    const userId = req.user._id;
-    // console.log(user.username);
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(403).json({ message: "Can't find user" });
-    }
-    return res.status(200).json({
-      message: "Current user fetched successfully",
-      user,
-    });
+    const user = req.user;
+    return res.status(200).json({ message: "User found", user });
   } catch (error) {
     console.log(error);
     res.status(500).json("Something went wrong.Try again later");
@@ -345,10 +466,10 @@ export const deleteAccountAction = async (req, res) => {
         .json({ message: "You must fill correct details to confirm deletion" });
     }
 
-    const deletedUser = await userModel.findByIdAndDelete(user._id);
+    const deletedUser = await User.findByIdAndDelete(user._id);
     if (!deletedUser) return res.status(404).send("User not found");
 
-    await postModel.deleteMany({ user: deletedUser._id });
+    await Post.deleteMany({ user: deletedUser._id });
     await Like.deleteMany({ likedBy: deletedUser._id });
     await Comment.deleteMany({ owner: deletedUser._id });
     await Saved.deleteMany({ user: deletedUser._id });

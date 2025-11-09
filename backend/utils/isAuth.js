@@ -5,10 +5,12 @@ import User from "../models/user.js";
 export const isLoggedIn = async (req, res, next) => {
   try {
     // 🧠 Token le from either cookie or header
+    // console.log("Hit");
     const token =
       req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
+      // console.log("token not found");
       return res.status(400).json({ message: "invalid token" });
     }
     // console.log(token);
@@ -18,7 +20,7 @@ export const isLoggedIn = async (req, res, next) => {
     // 🧩 Find user
     const user = await User.findById(decoded.id);
     if (!user) {
-      // console.log("User not found in authentication");
+      console.log("User not found in authentication");
       return res.status(403).json({ message: "User not found." });
     }
 

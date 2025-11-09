@@ -5,7 +5,7 @@ import Comment from "../models/comment.js";
 import Like from "../models/like.js";
 import Saved from "../models/saved.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import Post from "../models/post.js";
+import Share from "../models/share.js";
 
 // -------- UPDATE POST --------
 export const updatePost = async (req, res) => {
@@ -198,28 +198,58 @@ export const createPost = async (req, res) => {
 //Get post by id
 export const getPostById = async (req, res) => {
   try {
+    const userId = req.user?._id;
     const { postid } = req.params;
+
     if (!postid) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    const post = await Post.findById(postid).populate({
-      path: "user",
-      select: "username avatar bio",
-    });
-    if (!post) {
-      return res.status(401).json({
-        message: "Post not found",
-      });
+      return res.status(400).json({ message: "Post ID required" });
     }
 
+    // Step 1️⃣ — Fetch the post and populate basic user info
+    const post = await postModel.findById(postid)
+      .populate({
+        path: "user",
+        select: "username avatar bio privateAccount",
+      })
+      .lean();
+
+    if (!post || !post.user) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Step 2️⃣ — Fetch stats in parallel (single-post version)
+    const [likeCount, commentCount, saveCount, shareCount, userLike, userSave] =
+      await Promise.all([
+        Like.countDocuments({ post: postid }),
+        Comment.countDocuments({ post: postid }),
+        Saved.countDocuments({ post: postid }),
+        Share.countDocuments({ post: postid }),
+        Like.exists({ post: postid, likedBy: userId }),
+        Saved.exists({ post: postid, user: userId }),
+      ]);
+
+    // Step 3️⃣ — Attach stats
+    const finalPost = {
+      ...post,
+      stats: {
+        likes: likeCount,
+        comments: commentCount,
+        saves: saveCount,
+        shares: shareCount,
+        isLiked: !!userLike,
+        isSaved: !!userSave,
+      },
+    };
+
+    // Step 4️⃣ — Send response
     return res.status(200).json({
       message: "Post fetched successfully",
-      post,
+      post: finalPost,
     });
   } catch (err) {
-    console.log(err);
+    console.error("Get post by ID error:", err);
     return res
       .status(500)
-      .json({ message: "Something went wrong.Try again later" });
+      .json({ message: "Something went wrong. Try again later." });
   }
 };

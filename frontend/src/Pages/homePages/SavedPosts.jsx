@@ -1,10 +1,9 @@
-import React, { useContext, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { motion, useAnimation } from "framer-motion";
 import LeftNavbar from "../../components/LeftNavbar";
 import BottomNavbar from "../../components/BottomNavbar";
-import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import logo from "../../assets/logo.png";
-import { userDataContext } from "../../contexts/UserContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader.jsx";
@@ -13,17 +12,18 @@ import PostCard from "../../components/PostCard.jsx";
 
 const SavedPosts = () => {
   const navigate = useNavigate();
-  const [savedContent, setSavedContent] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
+  // ✅ Fetch saved content
   const fetchSavedContent = async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get("/api/users/savedcontent", {
         withCredentials: true,
       });
-
-      setSavedContent(response.data.savedContent);
+      setSavedPosts(response.data.savedContent || []);
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message ||
@@ -36,70 +36,72 @@ const SavedPosts = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchSavedContent();
-    };
+    fetchSavedContent();
 
-    fetchData();
+    // 🌫️ Listen for scroll to adjust header opacity
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 30);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   return (
-    <div className="flex h-screen bg-[#0a001a] text-white overflow-hidden">
-      {/* LEFT NAVBAR */}
-      <div className="hidden sm:flex w-64 flex-shrink-0 border-r border-white/10">
+    <div className="flex w-full min-h-screen bg-gradient-to-b from-[#0f0c29] via-[#302b63] to-[#24243e] text-white">
+      {/* Left Navbar only for sm+ */}
+      <div className="hidden sm:block">
         <LeftNavbar />
       </div>
+      <BottomNavbar />
 
-      {/* MAIN CONTENT AREA (scrollable feed like Home) */}
-      <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-600/50 scrollbar-track-transparent pb-24 sm:pb-0">
-        {/* HEADER */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="sticky top-0 z-20 bg-[#0a001a]/80 backdrop-blur-lg border-b border-white/10 
-                     flex items-center justify-between px-5 py-4"
-        >
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="logo"
-              className="w-9 h-9 rounded-full shadow-[0_0_10px_#a855f7]"
-            />
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-              Saved Posts
-            </h1>
-          </div>
-        </motion.div>
+      {/* ===== HEADER (Fixed + Full Width + Transparent on Scroll) ===== */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className={`fixed top-0 left-0 w-full z-30 backdrop-blur-lg border-b border-white/10 
+          flex items-center sm:hidden justify-between px-5 py-4 transition-all duration-500
+          ${scrolled ? "bg-[#0a001a]/95 shadow-lg" : "bg-[#0a001a]/60"}`}
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src={logo}
+            alt="logo"
+            className="w-9 h-9 rounded-full shadow-[0_0_10px_#a855f7]"
+          />
+          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+            Saved Posts
+          </h1>
+        </div>
+      </motion.div>
 
+      {/* ===== MAIN CONTENT ===== */}
+      <div
+        className="
+          flex-1
+          px-4 sm:px-8 md:px-12
+          pt-24 sm:pt-28
+          transition-all duration-500
+          border-none sm:border-l-0
+        "
+      >
         {loading ? (
           <Loader />
+        ) : savedPosts.length > 0 ? (
+          <motion.div layout className="flex flex-col items-center gap-6 pb-8">
+            {savedPosts.map((post) => (
+              <PostCard
+                key={post._id}
+                item={post}
+                setContent={setSavedPosts}
+                content={savedPosts}
+              />
+            ))}
+          </motion.div>
         ) : (
-          <>
-            {/* POSTS (Home-style cards) */}
-            <div className="flex flex-col items-center gap-6 py-6 px-3 sm:px-0">
-              {savedContent.length == 0 ? (
-                <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] text-gray-300">
-                  <div className="p-6 rounded-full bg-gray-800 shadow-md">
-                    <Bookmark className="w-16 h-16 text-purple-400" />
-                  </div>
-                  <h2 className="text-xl font-semibold mt-4 text-white">
-                    No Saved Posts Yet
-                  </h2>
-                  <p className="text-sm text-gray-400 mt-2 max-w-xs text-center">
-                    When you save posts, you’ll see them here. Start exploring
-                    and save something you like!
-                  </p>
-                </div>
-              ) : (
-                savedContent.map((item, index) => <PostCard item={item.post} />)
-              )}
-            </div>
-          </>
+          <p className="text-center text-gray-400 mt-10">No saved posts yet.</p>
         )}
-      </main>
-
-      {/* BOTTOM NAVBAR */}
-      <BottomNavbar />
+      </div>
     </div>
   );
 };

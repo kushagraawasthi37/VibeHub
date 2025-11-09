@@ -45,49 +45,24 @@ const SinglePostPage = () => {
         if (!postid) return;
         setLoading(true);
         await getCurrentUser();
-        const res = await axiosInstance.get(`/api/posts/post/${postid}`);
-        setPost(res.data.post);
-
-        const [likes, comments, shares, saves] = await Promise.all([
-          axiosInstance.get(`/api/posts/alllike/${postid}`),
-          axiosInstance.get(`/api/comment/allcomment/${postid}`),
-          axiosInstance.get(`/api/posts/sharecount/${postid}`),
-          axiosInstance.get(`/api/posts/savecount/${postid}`),
-        ]);
-
-        setTotalLike(likes.data?.likes?.length ?? 0);
-        setTotalComment(comments.data?.total ?? 0);
-        setTotalShare(shares.data?.shareCount ?? 0);
-        setTotalSaved(saves.data?.totalSaves ?? 0);
+        const response = await axiosInstance.get(`/api/posts/post/${postid}`);
+        // setPost(res.data.post);
+        console.log(response.data.post);
+        setPost(response?.data?.post);
+        setTotalLike(response?.data?.post?.stats?.likes);
+        setTotalComment(response?.data?.post?.stats?.comments);
+        setIsLiked(response?.data?.post?.stats?.isLiked);
+        setIsSaved(response?.data?.post?.stats?.isSaved);
+        setTotalShare(response?.data?.post?.stats?.shares);
+        setTotalSaved(response?.data?.post?.stats?.saves);
+        setIsOwner(response?.data?.post?.user?._id === userData._id);
       } catch (error) {
-        console.error(error);
-        toast.error("Failed to load post");
+        console.log(error);
       } finally {
         setLoading(false);
       }
     };
     fetchPost();
-  }, [postid]);
-
-  useEffect(() => {
-    const fetchUserActions = async () => {
-      try {
-        if (!postid) return;
-
-        await getCurrentUser();
-        const [likeRes, saveRes, ownerRes] = await Promise.all([
-          axiosInstance.get(`/api/posts/like/user/${postid}`),
-          axiosInstance.get(`/api/posts/save/user/${postid}`),
-          axiosInstance.get(`/api/posts/owner/${postid}`),
-        ]);
-        setIsLiked(!!likeRes.data.isLiked);
-        setIsSaved(!!saveRes.data.isSaved);
-        setIsOwner(ownerRes.data.isOwner);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    fetchUserActions();
   }, [postid]);
 
   const LikeHandler = async () => {

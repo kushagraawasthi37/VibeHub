@@ -13,77 +13,15 @@ const ReelVIdeo = ({ item }) => {
   const { userData, getCurrentUser } = useContext(userDataContext);
   const id = item._id;
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [totalLike, setTotalLike] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [totalComment, setTotalComment] = useState(0);
-  const [totalSaved, setTotalSaved] = useState(0);
-  const [isSaved, setIsSaved] = useState(false);
-  const [totalShare, setTotalShare] = useState(0);
-  const [isFollow, setIsFollow] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      try {
-        await getCurrentUser();
+  const [isLiked, setIsLiked] = useState(item.stats?.isLiked ?? false);
+  const [totalLike, setTotalLike] = useState(item.stats?.likes ?? 0);
+  const [isSaved, setIsSaved] = useState(item.stats?.isSaved ?? false);
+  const [totalSaved, setTotalSaved] = useState(item.stats?.saves ?? 0);
+  const [totalComment, setTotalComment] = useState(item.stats?.comments ?? 0);
+  const [totalShare, setTotalShare] = useState(item.stats?.shares ?? 0);
+  const [isFollow, setIsFollow] = useState(item.stats?.isFollow ?? false);
 
-        const [
-          likeResponse,
-          commentResponse,
-          shareResponse,
-          saveCountResponse,
-        ] = await Promise.all([
-          axiosInstance.get(`/api/posts/alllike/${id}`, {
-            withCredentials: true,
-          }),
-          axiosInstance.get(`/api/comment/allcomment/${id}`, {
-            withCredentials: true,
-          }),
-          axiosInstance.get(`/api/posts/sharecount/${id}`, {
-            withCredentials: true,
-          }),
-          axiosInstance.get(`/api/posts/savecount/${id}`, {
-            withCredentials: true,
-          }),
-        ]);
-
-        setTotalLike(likeResponse.data?.likes?.length ?? 0);
-        setTotalComment(commentResponse.data?.total ?? 0);
-        setTotalShare(shareResponse.data?.shareCount ?? 0);
-        setTotalSaved(saveCountResponse.data?.totalSaves ?? 0);
-      } catch (error) {
-        console.error("Error fetching post data:", error);
-      }
-    };
-    fetchData();
-  }, [id]);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const [userIsfollowsResponse, userLikeResponse, userSaveResponse] =
-          await Promise.all([
-            await axiosInstance.get(`/api/users/isfollower/${item.user._id}`, {
-              withCredentials: true,
-            }),
-            axiosInstance.get(`/api/posts/like/user/${id}`, {
-              withCredentials: true,
-            }),
-            axiosInstance.get(`/api/posts/save/user/${id}`, {
-              withCredentials: true,
-            }),
-          ]);
-
-        setIsFollow(userIsfollowsResponse.data.isFollows);
-        setIsLiked(!!userLikeResponse.data.isLiked);
-        setIsSaved(!!userSaveResponse.data.isSaved);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-
-    fetch();
-  }, [userData]);
 
   const LikeHandler = async () => {
     if (!userData) return toast.error("Login to like");

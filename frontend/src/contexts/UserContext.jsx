@@ -1,34 +1,47 @@
-import React, { useState } from "react";
-import { createContext } from "react";
+import React, { useState, useEffect, createContext, useRef } from "react";
 import axiosInstance from "./axiosInstance";
-import { toast } from "react-toastify";
-import { useEffect } from "react";
 
 export const userDataContext = createContext();
+
 const UserContext = ({ children }) => {
   const [userData, setUserData] = useState(undefined);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const fetchedOnce = useRef(false);
+  const failedOnce = useRef(false); // prevent infinite retries for guest users
 
   const getCurrentUser = async () => {
+    // 🧠 If already tried and failed once, don’t retry automatically
+    if (failedOnce.current) return;
+
     try {
+      setLoadingUser(true);
       const response = await axiosInstance.get("/api/users/currentuser", {
         withCredentials: true,
       });
-
-      // console.log(response.data?.user);
-      setUserData(response?.data?.user);
+      setUserData(response?.data?.user || null);
     } catch (error) {
-      console.log(error.message);
-      // toast.error("Login again");
+      failedOnce.current = true; // 🔥 remember failure
+      setUserData(null);
+      console.warn("No active session, skipping further checks.");
+    } finally {
+      setLoadingUser(false);
     }
   };
 
-  const value = { userData, getCurrentUser };
+  useEffect(() => {
+    // ✅ Only once on mount (even in StrictMode)
+    if (!fetchedOnce.current) {
+      fetchedOnce.current = true;
+      getCurrentUser();
+    }
+  }, []);
+
+  const value = { userData, setUserData, getCurrentUser, loadingUser };
+
   return (
-    <div>
-      <userDataContext.Provider value={value}>
-        {children}
-      </userDataContext.Provider>
-    </div>
+    <userDataContext.Provider value={value}>
+      {children}
+    </userDataContext.Provider>
   );
 };
 

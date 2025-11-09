@@ -155,3 +155,4 @@ export const isFollower = async (req, res) => {
       .json({ message: "Something went wrong.Try again later" });
   }
 };
+

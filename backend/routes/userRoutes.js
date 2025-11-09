@@ -17,18 +17,18 @@ import {
 
 const router = express.Router();
 
-router.post("/search/user", userController.searchUsers);
+router.post("/search/user", isLoggedIn, userController.searchUsers);
 
 // Route to view another user's profile
-router.get("/user/:username", userController.viewOtherProfile);
+router.get("/user/:username", isLoggedIn, userController.viewOtherProfile);
 
 //Updated routes
 
-//Feed Pafe
-router.get("/feed", userController.getFeed);
+//Public Feed Pafe
+router.get("/feed", isLoggedIn, userController.getFeedLoggedIn);
 
 //Home route
-router.get("/home", userController.getHome);
+router.get("/home", isLoggedIn, userController.getHomeLoggedIn);
 
 //CurrentUser
 router.get("/currentuser", isLoggedIn, userController.currentUser);
@@ -40,16 +40,20 @@ router.get("/account/acceptrequest/:requestId", isLoggedIn, acceptRequest);
 
 //Follower and Following
 router.get("/follow/:adminid", isLoggedIn, Follower);
-router.get("/follower/:adminid", followerCount);
-router.get("/following/:adminid", followingCount);
+router.get("/follower/:adminid", isLoggedIn, followerCount);
+router.get("/following/:adminid", isLoggedIn, followingCount);
 router.get("/isfollower/:adminid", isLoggedIn, isFollower);
 
 //Current user saved content
 router.get("/savedcontent", isLoggedIn, userSavedContent);
 
 //Current user all post
-router.get("/userpost/:adminid", userController.userAllPost);
-router.get("/uservideopost/:adminid", userController.userAllVideoPost);
+router.get("/userpost/:adminid", isLoggedIn, userController.userAllPost);
+router.get(
+  "/uservideopost/:adminid",
+  isLoggedIn,
+  userController.userAllVideoPost
+);
 
 //Current user is owner of page
 router.get("/owner/:adminid", isLoggedIn, userController.isCurrentUserIsOwner);
@@ -63,7 +67,6 @@ router.post(
 );
 
 //delete your account permanently
-
 router.post(
   "/delete-account/:userid",
   isLoggedIn,

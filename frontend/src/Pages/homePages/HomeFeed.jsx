@@ -19,20 +19,20 @@ const HomeFeed = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
   const { userData } = useContext(userDataContext);
+
   const getHome = async () => {
+    if (!userData) return;
     try {
       setLoading(true);
-      const response = await axios.get("/api/users/home", {
+      const response = await axios(`/api/users/home`, {
         withCredentials: true,
       });
 
       setContent(response.data.posts);
+
+      console.log(response.data.posts);
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Something went wrong";
-      toast.error(errorMessage);
+      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -45,6 +45,7 @@ const HomeFeed = () => {
 
     fetchData();
   }, []);
+
   return (
     <>
       <div className="relative flex bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white font-sans min-h-screen overflow-hidden">
@@ -136,7 +137,7 @@ const HomeFeed = () => {
               {/* Feed Section */}
               <div className="flex flex-col items-center mt-5 space-y-6 px-2 sm:px-0 pb-10">
                 {content.map((item) => (
-                  <PostCard item={item} />
+                  <PostCard key={item._id} item={item} />
                 ))}
               </div>
             </div>

@@ -17,10 +17,11 @@ import {
 import logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { userDataContext } from "../contexts/UserContext";
+import axiosInstance from "../contexts/axiosInstance";
 
 const LeftNavbar = () => {
   const navigate = useNavigate();
-  const { userData, getCurrentUser, logoutUser } = useContext(userDataContext);
+  const { userData, getCurrentUser } = useContext(userDataContext);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -32,11 +33,22 @@ const LeftNavbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logoutUser?.();
-      toast.success("Logged out successfully!");
+      const response = await axiosInstance.get(`/api/auth/logout`, {
+        withCredentials: true,
+      });
+
+      localStorage.removeItem("authToken");
+
+      console.log(response.data);
       navigate("/login");
-    } catch (err) {
-      toast.error("Error logging out!");
+      toast.success(response.data);
+    } catch (error) {
+      console.log(error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
+      toast.error(errorMessage);
     }
   };
 
@@ -190,7 +202,7 @@ const LeftNavbar = () => {
               />
             </motion.div>
             <span className="text-[10px] sm:text-xs mt-1 opacity-80">
-              Saved 
+              Saved
             </span>
           </motion.button>
         </div>

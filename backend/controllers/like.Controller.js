@@ -69,31 +69,6 @@ export const likeComment = async (req, res) => {
   }
 };
 
-export const postAllLike = async (req, res) => {
-  try {
-    const { postid } = req.params;
-    if (!postid) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // console.log(postid);
-    // Find all likes for the given post ID with populated likedBy user info
-    const likes = await Like.find({ post: postid })
-      .populate("likedBy", "username avatar") // user ke selected fields populate kar rahe hain
-      .sort({ createdAt: -1 }); // latest pehle
-
-    // console.log("AllLikeUpdated")
-    return res.status(200).json({
-      message: "All likes for the post fetched successfully",
-      likes,
-    });
-  } catch (error) {
-    console.error("Error fetching post likes:", error);
-    return res.status(500).json({
-      message: "Something went wrong while fetching likes",
-    });
-  }
-};
 
 export const likedByUser = async (req, res) => {
   try {

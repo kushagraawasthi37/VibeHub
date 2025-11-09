@@ -16,5 +16,5 @@ const savedSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Saved = mongoose.model("Saved", savedSchema);
+const Saved = mongoose.models.Saved || mongoose.model("Saved", savedSchema);
 export default Saved;
