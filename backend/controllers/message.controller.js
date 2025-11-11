@@ -29,6 +29,7 @@ export const sendMessage = async (req, res) => {
     });
 
     conversation.messages.push(newMessage._id);
+    conversation.updatedAt = new Date();
     await conversation.save();
 
     return res.status(201).json({
@@ -48,6 +49,9 @@ export const getMessages = async (req, res) => {
   try {
     const myId = req.user._id;
     const { otherParticipantId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page)) || 1;
+    const limit = Math.min(10, parseInt(req.query.limit)) || 10;
+    const skip = (page - 1) * limit;
 
     if (!myId || !otherParticipantId) {
       return res.status(400).json({ message: "All fields are required" });
@@ -63,7 +67,9 @@ export const getMessages = async (req, res) => {
           { path: "receiverId", select: "-password " }, // populate receiverId similarly
         ],
       })
-      .populate("participants", "username avatar email");
+      .populate("participants", "username avatar email")
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
       message: "Conversation found successfully",
@@ -82,9 +88,17 @@ export const getALLConversation = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    const page = Math.max(1, parseInt(req.query.page)) || 1;
+    const limit = Math.min(10, parseInt(req.query.limit)) || 10;
+    const skip = (page - 1) * limit;
+
     const allConversation = await Conversation.find({
       participants: { $in: [userId] },
-    }).populate("participants", "username email avatar");
+    })
+      .populate("participants", "username email avatar")
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
       message: "All conversations fetched successfully",

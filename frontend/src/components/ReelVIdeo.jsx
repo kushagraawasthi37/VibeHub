@@ -1,4 +1,4 @@
-import React, { useContext, useDebugValue, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import axiosInstance from "../contexts/axiosInstance";
 import { useNavigate } from "react-router-dom";
@@ -10,8 +10,9 @@ import CommentsSection from "../Pages/postPages/CommentSection";
 
 const ReelVIdeo = ({ item }) => {
   const navigate = useNavigate();
-  const { userData, getCurrentUser } = useContext(userDataContext);
+  const { userData } = useContext(userDataContext);
   const id = item._id;
+  const videoRef = useRef(null);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
   const [isLiked, setIsLiked] = useState(item.stats?.isLiked ?? false);
@@ -22,6 +23,7 @@ const ReelVIdeo = ({ item }) => {
   const [totalShare, setTotalShare] = useState(item.stats?.shares ?? 0);
   const [isFollow, setIsFollow] = useState(item.stats?.isFollow ?? false);
 
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   const LikeHandler = async () => {
     if (!userData) return toast.error("Login to like");
@@ -75,8 +77,6 @@ const ReelVIdeo = ({ item }) => {
     }
   };
 
-  const CommentHandler = () => navigate(`/comment/${item.user._id}`);
-
   const followHandler = async () => {
     try {
       if (!userData) {
@@ -86,7 +86,6 @@ const ReelVIdeo = ({ item }) => {
       const response = await axiosInstance.get(
         `/api/users/follow/${item?.user?._id}`
       );
-
       console.log(response);
       setIsFollow((prev) => !prev);
     } catch (error) {
@@ -94,6 +93,7 @@ const ReelVIdeo = ({ item }) => {
       setIsFollow((prev) => !prev);
     }
   };
+
   return (
     <div
       key={item._id}
@@ -102,12 +102,25 @@ const ReelVIdeo = ({ item }) => {
     >
       {/* Video */}
       <video
+        ref={videoRef}
         src={item.videoContent}
-        className="h-full w-full object-cover"
+        className={`h-full w-full object-cover transition-opacity duration-500 ${
+          isVideoLoaded ? "opacity-100" : "opacity-0"
+        }`}
         loop
         muted
         autoPlay
+        playsInline
+        preload="metadata"
+        onLoadedData={() => setIsVideoLoaded(true)}
       ></video>
+
+      {/* Loader while video not ready */}
+      {!isVideoLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
 
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -159,7 +172,6 @@ const ReelVIdeo = ({ item }) => {
 
         {/* Comment */}
         <div
-          // onClick={CommentHandler}
           onClick={() => setIsCommentsOpen(true)}
           className="flex flex-col items-center group cursor-pointer"
         >
@@ -169,7 +181,7 @@ const ReelVIdeo = ({ item }) => {
             postId={item._id}
             isOpen={isCommentsOpen}
             onClose={() => setIsCommentsOpen(false)}
-          />{" "}
+          />
         </div>
 
         {/* Share */}

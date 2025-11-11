@@ -104,12 +104,19 @@ export const editComment = async (req, res) => {
 export const allComment = async (req, res) => {
   try {
     const { postId } = req.params;
+
+    const page = Math.max(1, parseInt(req.query.page)) || 1;
+    const limit = Math.min(20, parseInt(req.query.limit)) || 20;
+    const skip = (page - 1) * limit;
+
     if (!postId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const comments = await Comment.find({ post: postId })
       .populate("owner", "username avatar")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const total = comments.length;
 

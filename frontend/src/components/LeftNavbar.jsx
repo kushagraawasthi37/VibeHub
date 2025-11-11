@@ -74,7 +74,7 @@ const LeftNavbar = () => {
           <motion.img
             src={logo}
             alt="VibeHub Logo"
-            className="w-10 h-10 md:w-12 md:h-12 rounded-xl object-cover shadow-[0_0_15px_rgba(168,85,247,0.6)]"
+            className="w-10 ml-2 h-10 md:w-12 md:h-12 rounded-xl object-cover shadow-[0_0_15px_rgba(168,85,247,0.6)]"
             animate={{
               boxShadow: [
                 "0 0 10px rgba(168,85,247,0.6)",

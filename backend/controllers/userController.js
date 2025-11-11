@@ -74,24 +74,29 @@ export const viewOtherProfile = async (req, res) => {
 // feed page Logged In
 export const getFeedLoggedIn = async (req, res) => {
   try {
+    console.log("Page ", req.query.page, " Limit ", req.query.limit);
+
     const userId = req.user?._id;
-    // Step 1️⃣ — Fetch only public posts + populate basic user info
+    const page = Math.max(1, Number(req.query?.page)) || 1;
+    const limit = Math.min(10, Number(req.query.limit)) || 10;
+    const skip = (page - 1) * limit;
+
+    // Step 1️⃣ — Fetch paginated posts with video content only + populate basic user info
     let posts = await Post.find({ videoContent: { $ne: null } })
       .populate({
         path: "user",
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1 })
-      .lean(); // use lean() for raw JSON = faster
+      .sort({ createdAt: -1, _id: -1 }) // tiebreaker with _id
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    // Filter out posts from deleted/private users
-    posts = posts.filter((post) => post.user !== null);
-
-    // Get all postIds
+    posts = posts.filter((post) => post.user !== null); // filter deleted/private users
     const postIds = posts.map((p) => p._id);
 
-    // Step 2️⃣ — Fetch all stats in bulk (parallel)
+    // Step 2️⃣ — Bulk fetch all stats
     const [likes, comments, saves, shares, userLikes, userSaves] =
       await Promise.all([
         Like.aggregate([
@@ -114,7 +119,7 @@ export const getFeedLoggedIn = async (req, res) => {
         Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
       ]);
 
-    // Step 3️⃣ — Convert to lookup maps for O(1) merge
+    // Step 3️⃣ — Convert stats to lookup maps
     const likeMap = Object.fromEntries(
       likes.map((l) => [l._id.toString(), l.totalLikes])
     );
@@ -131,7 +136,7 @@ export const getFeedLoggedIn = async (req, res) => {
     const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
     const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
 
-    // Step 4️⃣ — Merge stats into each post (O(n))
+    // Step 4️⃣ — Merge stats into posts
     const finalPosts = posts.map((post) => {
       const pid = post._id.toString();
       return {
@@ -147,27 +152,38 @@ export const getFeedLoggedIn = async (req, res) => {
       };
     });
 
-    // Step 5️⃣ — Send final response
+    // Step 5️⃣ — Pagination info
+    const totalPosts = await Post.countDocuments({
+      videoContent: { $ne: null },
+    });
+    const totalFetched = skip + posts.length;
+    const hasMore = totalFetched < totalPosts;
+
     return res.status(200).json({
-      message: "Home feed loaded successfully 🚀",
+      message: "Video feed loaded successfully 🚀",
       posts: finalPosts,
+      page,
+      limit,
+      hasMore,
     });
   } catch (err) {
-    console.error("Home load error:", err);
+    console.error("Video feed load error:", err);
     return res.status(500).json({
       message: "Something went wrong. Try again later.",
     });
   }
 };
 
-
 //Home page
 export const getHomeLoggedIn = async (req, res) => {
   try {
     console.log("Home Hit Personal");
+    console.log(req.query);
+
+    //Jo bhi humko params se data milega wo string mai hoga wo pahele Number mai change kro
     const userId = req.user?._id;
-    const page = Math.max(1, parseInt(req.query.page)) || 1;
-    const limit = Math.min(50, parseInt(req.query.limit)) || 10; // max 50 posts per page
+    const page = Math.max(1, Number(req.query?.page)) || 1;
+    const limit = Math.min(10, Number(req.query.limit)) || 10; // max 10 posts per page
     const skip = (page - 1) * limit;
 
     // Step 1️⃣ — Fetch paginated public posts + populate basic user info
@@ -177,7 +193,7 @@ export const getHomeLoggedIn = async (req, res) => {
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 }) // Add _id as a tiebreaker
       .skip(skip)
       .limit(limit)
       .lean();
@@ -242,12 +258,21 @@ export const getHomeLoggedIn = async (req, res) => {
     });
 
     // Step 5️⃣ — Return paginated response including page info
+    // Step 5️⃣ — Return paginated response including page info
+    const totalPosts = await Post.countDocuments();
+    const totalFetched = skip + posts.length;
+    finalPosts.forEach((item) => {
+      console.log(item._id);
+    });
+
+    let hasMore = totalFetched < totalPosts;
+    console.log(hasMore);
     return res.status(200).json({
       message: "Home feed loaded successfully 🚀",
       posts: finalPosts,
       page,
       limit,
-      hasMore: posts.length === limit,
+      hasMore, // ✅ accurate check
     });
   } catch (err) {
     console.error("Home load error:", err);
@@ -256,7 +281,6 @@ export const getHomeLoggedIn = async (req, res) => {
     });
   }
 };
-
 
 //Maintain privacy
 export const privacy = async (req, res) => {

@@ -3,6 +3,7 @@ import Like from "../models/like.js";
 import Saved from "../models/saved.js";
 import mongoose from "mongoose";
 import Share from "../models/share.js";
+import Post from "../models/post.js";
 
 // 2. Check if the current user has saved the given post (true/false)
 export const isSavedByUser = async (req, res) => {
@@ -60,9 +61,14 @@ export const toggleSave = async (req, res) => {
 
 export const userSavedContent = async (req, res) => {
   try {
-    const userId = req.user._id;
+    console.log("Page ", req.query.page, " Limit ", req.query.limit);
 
-    // Step 1️⃣ — Fetch all saved posts by this user
+    const userId = req.user._id;
+    const page = Math.max(1, Number(req.query?.page)) || 1;
+    const limit = Math.min(10, Number(req.query.limit)) || 10;
+    const skip = (page - 1) * limit;
+
+    // Step 1️⃣ — Fetch all saved posts by this user (with pagination)
     const savedDocs = await Saved.find({ user: userId })
       .populate({
         path: "post",
@@ -72,21 +78,26 @@ export const userSavedContent = async (req, res) => {
           match: { privateAccount: false },
         },
       })
+      .sort({ createdAt: -1, _id: -1 }) // newest saved first
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    // Step 2️⃣ — Filter out private or deleted posts
+    // Step 2️⃣ — Filter out private/deleted/null posts
     const posts = savedDocs.map((s) => s.post).filter((p) => p && p.user);
-
     if (!posts.length) {
       return res.status(200).json({
         message: "No saved content found.",
-        savedContent: [],
+        posts: [],
+        page,
+        limit,
+        hasMore: false,
       });
     }
 
     const postIds = posts.map((p) => p._id);
 
-    // Step 3️⃣ — Bulk fetch stats (just like home feed)
+    // Step 3️⃣ — Bulk fetch post stats (likes, comments, saves, shares)
     const [likes, comments, saves, shares, userLikes, userSaves] =
       await Promise.all([
         Like.aggregate([
@@ -126,7 +137,7 @@ export const userSavedContent = async (req, res) => {
     const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
 
     // Step 5️⃣ — Merge stats into posts
-    const finalSaved = posts.map((post) => {
+    const finalPosts = posts.map((post) => {
       const pid = post._id.toString();
       return {
         ...post,
@@ -141,10 +152,18 @@ export const userSavedContent = async (req, res) => {
       };
     });
 
-    // Step 6️⃣ — Return formatted result
+    // Step 6️⃣ — Pagination info (based on total saved)
+    const totalSaved = await Saved.countDocuments({ user: userId });
+    const totalFetched = skip + posts.length;
+    const hasMore = totalFetched < totalSaved;
+    console.log("Page ", req.query.page, " Limit ", req.query.limit);
+
     return res.status(200).json({
-      message: "All saved content fetched successfully with stats 🚀",
-      savedContent: finalSaved,
+      message: "Saved content loaded successfully 🚀",
+      posts: finalPosts,
+      page,
+      limit,
+      hasMore,
     });
   } catch (error) {
     console.error("Saved content error:", error);

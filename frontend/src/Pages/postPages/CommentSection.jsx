@@ -61,10 +61,10 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
         content: newComment,
       });
       setNewComment("");
-      toast.success(res.data.message);
+      // toast.success(res.data.message);
       getComments();
     } catch {
-      toast.error("Failed to add comment");
+      // toast.error("Failed to add comment");
     } finally {
       setLoading(false);
     }
@@ -73,10 +73,10 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
   const handleDelete = async (id) => {
     try {
       await axiosInstance.post(`/api/comment/delete/${id}`);
-      toast.success("Comment deleted");
+      // toast.success("Comment deleted");
       getComments();
     } catch {
-      toast.error("Delete failed");
+      // toast.error("Delete failed");
     }
   };
 
@@ -85,12 +85,12 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
       await axiosInstance.post(`/api/comment/edit/${id}`, {
         content: editText,
       });
-      toast.success("Comment updated");
+      // toast.success("Comment updated");
       setEditId(null);
       setEditText("");
       getComments();
     } catch {
-      toast.error("Edit failed");
+      // toast.error("Edit failed");
     }
   };
 
@@ -100,7 +100,7 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
       await axiosInstance.post(`/api/comment/like/${id}`);
       getComments();
     } catch {
-      toast.error("Like failed");
+      // toast.error("Like failed");
     }
   };
 

@@ -1,106 +1,158 @@
-import React, { useEffect, useState } from "react";
-import { motion, useAnimation } from "framer-motion";
-import LeftNavbar from "../../components/LeftNavbar";
-import BottomNavbar from "../../components/BottomNavbar";
+import React, { useRef, useEffect, useState, useContext } from "react";
+import { motion } from "framer-motion";
 import { Bookmark } from "lucide-react";
 import logo from "../../assets/logo.png";
+import BottomNavbar from "../../components/BottomNavbar";
+import LeftNavbar from "../../components/LeftNavbar";
+import axios from "../../contexts/axiosInstance";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import Loader from "../../components/Loader.jsx";
-import axiosInstance from "../../contexts/axiosInstance.js";
-import PostCard from "../../components/PostCard.jsx";
+import PostCard from "../../components/PostCard";
+import LoadingMore from "../../components/LoadingMore";
+import { userDataContext } from "../../contexts/UserContext";
 
 const SavedPosts = () => {
+  const LIMIT = 4;
+  const scrollContainerRef = useRef(null);
   const navigate = useNavigate();
-  const [savedPosts, setSavedPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const { userData } = useContext(userDataContext);
 
-  // ✅ Fetch saved content
-  const fetchSavedContent = async () => {
+  const [content, setContent] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false); // ✅ Added
+  const fetching = useRef(false);
+
+  // ✅ Fetch saved posts (paginated)
+  const getSavedPosts = async (pageToFetch = page) => {
+    if (!userData?._id || fetching.current) return;
+    fetching.current = true;
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const response = await axiosInstance.get("/api/users/savedcontent", {
-        withCredentials: true,
-      });
-      setSavedPosts(response.data.savedContent || []);
-    } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Something went wrong";
-      toast.error(errorMessage);
+      const res = await axios.get(
+        `/api/users/savedcontent?page=${pageToFetch}&limit=${LIMIT}`,
+        { withCredentials: true }
+      );
+
+      const newPosts = res.data.posts || [];
+      const uniquePosts = newPosts.filter(
+        (p) => !content.some((c) => c._id === p._id)
+      );
+
+      setContent((prev) => [...prev, ...uniquePosts]);
+      setHasMore(res.data.hasMore);
+    } catch (err) {
+      console.error("Saved posts fetch error:", err);
+      toast.error("Failed to load saved posts");
     } finally {
       setLoading(false);
+      fetching.current = false;
+      setInitialLoaded(true); // ✅ Mark first fetch complete
     }
   };
 
+  // ✅ Reset when user changes
   useEffect(() => {
-    fetchSavedContent();
+    if (!userData?._id) return;
+    setContent([]);
+    setPage(1);
+    setHasMore(true);
+    setInitialLoaded(false); // ✅ Reset before new user load
+  }, [userData?._id]);
 
-    // 🌫️ Listen for scroll to adjust header opacity
+  // 📦 Fetch data when page changes
+  useEffect(() => {
+    if (userData?._id) getSavedPosts(page);
+  }, [page, userData?._id]);
+
+  // 🔄 Infinite scroll inside container
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      const bottom =
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - 10;
+
+      if (bottom && !loading && hasMore) {
+        setPage((prev) => prev + 1);
+      }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [loading, hasMore]);
 
   return (
-    <div className="flex w-full min-h-screen bg-gradient-to-b from-[#0f0c29] via-[#302b63] to-[#24243e] text-white">
-      {/* Left Navbar only for sm+ */}
-      <div className="hidden sm:block">
+    <div className="relative flex bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white font-sans min-h-screen overflow-hidden">
+      {/* Left Navbar */}
+      <div className="hidden sm:flex fixed top-0 left-0 h-screen z-40">
         <LeftNavbar />
       </div>
-      <BottomNavbar />
 
-      {/* ===== HEADER (Fixed + Full Width + Transparent on Scroll) ===== */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className={`fixed top-0 left-0 w-full z-30 backdrop-blur-lg border-b border-white/10 
-          flex items-center sm:hidden justify-between px-5 py-4 transition-all duration-500
-          ${scrolled ? "bg-[#0a001a]/95 shadow-lg" : "bg-[#0a001a]/60"}`}
-      >
-        <div className="flex items-center gap-3">
-          <img
-            src={logo}
-            alt="logo"
-            className="w-9 h-9 rounded-full shadow-[0_0_10px_#a855f7]"
-          />
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            Saved Posts
-          </h1>
-        </div>
-      </motion.div>
-
-      {/* ===== MAIN CONTENT ===== */}
+      {/* Scrollable Saved Posts Section */}
       <div
-        className="
-          flex-1
-          px-4 sm:px-8 md:px-12
-          pt-24 sm:pt-28
-          transition-all duration-500
-          border-none sm:border-l-0
-        "
+        ref={scrollContainerRef}
+        className="flex-1 w-full sm:ml-24 md:ml-28 overflow-y-scroll overflow-x-hidden scroll-smooth"
+        style={{ height: "100vh" }}
       >
-        {loading ? (
-          <Loader />
-        ) : savedPosts.length > 0 ? (
-          <motion.div layout className="flex flex-col items-center gap-6 pb-8">
-            {savedPosts.map((post) => (
-              <PostCard
-                key={post._id}
-                item={post}
-                setContent={setSavedPosts}
-                content={savedPosts}
-              />
-            ))}
-          </motion.div>
-        ) : (
-          <p className="text-center text-gray-400 mt-10">No saved posts yet.</p>
+        {/* Background Blobs */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 0.25, scale: 1 }}
+          transition={{ duration: 3, repeat: Infinity, repeatType: "mirror" }}
+          className="absolute top-[-10%] left-[-10%] w-60 h-60 sm:w-72 sm:h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 0.25, scale: 1 }}
+          transition={{
+            duration: 3,
+            delay: 1,
+            repeat: Infinity,
+            repeatType: "mirror",
+          }}
+          className="absolute bottom-[-10%] right-[-10%] w-60 h-60 sm:w-72 sm:h-72 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl"
+        />
+
+        {/* Saved Posts List */}
+        <motion.div
+          layout
+          className="flex flex-col items-center gap-6 py-8 sm:py-10 px-4 sm:px-10"
+        >
+          {content.length > 0
+            ? content.map((item) => (
+                <PostCard
+                  key={item._id}
+                  item={item}
+                  setContent={setContent}
+                  content={content}
+                />
+              ))
+            : initialLoaded &&
+              !loading && (
+                // ✅ Only show this after first fetch completes
+                <p className="text-gray-400 text-sm mt-10">
+                  You haven’t saved any posts yet 📭
+                </p>
+              )}
+        </motion.div>
+
+        {/* Loader / End of List */}
+        {loading && hasMore && <LoadingMore />}
+        {!hasMore && !loading && content.length > 0 && (
+          <p className="text-gray-400 text-sm mt-5 text-center">
+            You’ve reached the end 🎉
+          </p>
         )}
+      </div>
+
+      {/* Bottom Navbar */}
+      <div className="fixed bottom-0 left-0 w-full z-50 sm:hidden">
+        <BottomNavbar />
       </div>
     </div>
   );

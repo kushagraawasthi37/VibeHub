@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import { userDataContext } from "../contexts/UserContext";
 import CommentsSection from "../Pages/postPages/CommentSection";
-import profileFallback from "../assets/avatar.png"; // Replace with your fallback image
+import profileFallback from "../assets/avatar.png";
 import axiosInstance from "../contexts/axiosInstance";
 import { toast } from "react-toastify";
 
@@ -22,29 +22,24 @@ const PostCard = ({ item, setContent, content }) => {
   const navigate = useNavigate();
   const { userData } = useContext(userDataContext);
 
-  // States from backend stat, user-specific (for instant UI, only for toggling)
   const [isLiked, setIsLiked] = useState(item?.stats?.isLiked ?? false);
   const [isSaved, setIsSaved] = useState(item?.stats?.isSaved ?? false);
   const [totalLike, setTotalLike] = useState(item?.stats?.likes ?? 0);
-  const [totalComment] = useState(item?.stats?.comments ?? 0); // Static, already populated
+  const [totalComment] = useState(item?.stats?.comments ?? 0);
   const [totalSaved, setTotalSaved] = useState(item.stats?.saves ?? 0);
   const [totalShare, setTotalShare] = useState(item?.stats?.shares ?? 0);
-  const [showMenu, setShowMenu] = useState(false); // 🔹 menu toggle
-
+  const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
-  // For owner actions
   const isOwner = userData?._id === item.user._id;
 
-  // Follow, only if not following and not owner (get from backend per post: isFollow)
   const [isFollow, setIsFollow] = useState(
     item.stats.isFollow !== undefined
       ? !item.stats.isFollow && !isOwner
       : !isOwner
   );
 
-  // Instantly remove post from feed after follow (if required in UX)
   const handleFollow = async () => {
     if (!userData) {
       toast.error("Login for follow");
@@ -55,7 +50,6 @@ const PostCard = ({ item, setContent, content }) => {
       await axiosInstance.get(`/api/users/follow/${item.user._id}`, {
         withCredentials: true,
       });
-      // Optional: Remove post from page after follow (UX choice)
       setContent((prev) => prev.filter((p) => p._id !== item._id));
     } catch (error) {
       setIsFollow(true);
@@ -110,7 +104,7 @@ const PostCard = ({ item, setContent, content }) => {
       toast.error("Login for share");
       return;
     }
-    setTotalShare((prev) => prev + 1); // optimistic
+    setTotalShare((prev) => prev + 1);
     try {
       await axiosInstance.get(`/api/posts/share/${item._id}`, {
         withCredentials: true,
@@ -120,7 +114,6 @@ const PostCard = ({ item, setContent, content }) => {
     }
   };
 
-  // 🔹 menu options
   const handleMenuAction = (action) => {
     setShowMenu(false);
     if (action === "report") toast.info("Post reported");
@@ -138,7 +131,7 @@ const PostCard = ({ item, setContent, content }) => {
         withCredentials: true,
       });
       toast.success("Post deleted successfully");
-      setContent((prev) => prev.filter((p) => p._id !== item._id)); // Instantly remove from feed
+      setContent((prev) => prev.filter((p) => p._id !== item._id));
     } catch (error) {
       toast.error(
         error.response?.data?.message || error.message || "Something went wrong"
@@ -148,6 +141,9 @@ const PostCard = ({ item, setContent, content }) => {
     }
   };
 
+  // ✅ New: Handle video visibility
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
   return (
     <>
       <motion.div
@@ -156,12 +152,12 @@ const PostCard = ({ item, setContent, content }) => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.1 }}
-        className="w-full max-w-md backdrop-blur-xl bg-gradient-to-b from-white/10 to-white/5   border border-white/10 rounded-2xl shadow-lg overflow-hidden hover:shadow-[0_0_25px_rgba(168,85,247,0.2)]  transition-all duration-500"
+        className="w-full max-w-md backdrop-blur-xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 rounded-2xl shadow-lg overflow-hidden hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-all duration-500"
       >
         <div className="flex items-center justify-between p-3">
           <div
             onClick={() => navigate(`/profile/${item?.user?._id}`)}
-            className="flex   hover:cursor-pointer items-center gap-3"
+            className="flex hover:cursor-pointer items-center gap-3"
           >
             <img
               src={item?.user?.avatar || profileFallback}
@@ -201,8 +197,7 @@ const PostCard = ({ item, setContent, content }) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-12 flex flex-col bg-[#1a1533]/95 border border-white/10 
-      rounded-xl shadow-lg backdrop-blur-xl w-44 z-[999] overflow-visible p-1 space-y-1"
+                  className="absolute right-0 top-12 flex flex-col bg-[#1a1533]/95 border border-white/10 rounded-xl shadow-lg backdrop-blur-xl w-44 z-[999] overflow-visible p-1 space-y-1"
                 >
                   {isOwner ? (
                     <>
@@ -261,18 +256,28 @@ const PostCard = ({ item, setContent, content }) => {
             />
           </motion.div>
         )}
+
         {item.videoContent && (
           <motion.div
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.4 }}
-            className="relative"
+            className="relative flex justify-center items-center"
           >
+            {!isVideoLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-6 h-6 border-2 border-t-transparent border-purple-400 rounded-full animate-spin"></div>
+              </div>
+            )}
             <video
               src={item.videoContent}
               autoPlay
               muted
               loop
-              className="w-full max-h-[450px] object-cover"
+              playsInline
+              onLoadedData={() => setIsVideoLoaded(true)}
+              className={`w-full max-h-[450px] object-cover transition-opacity duration-500 ${
+                isVideoLoaded ? "opacity-100" : "opacity-0"
+              }`}
             />
           </motion.div>
         )}
