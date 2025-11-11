@@ -37,6 +37,6 @@ Follow these steps to run VibeHub locally:
 ### 1️⃣ Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/vibehub.git
+git clone https://github.com/kushagraawasthi37/vibehub.git
 cd vibehub
 ```
