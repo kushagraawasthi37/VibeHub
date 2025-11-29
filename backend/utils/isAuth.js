@@ -6,7 +6,9 @@ export const isLoggedIn = async (req, res, next) => {
     // Extract token from cookie or Authorization header
     const tokenFromCookie = req.cookies?.token;
     const authHeader = req.header("Authorization");
-    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "").trim() : null;
+    const tokenFromHeader = authHeader?.startsWith("Bearer ")
+      ? authHeader.replace("Bearer ", "").trim()
+      : null;
 
     const token = tokenFromCookie || tokenFromHeader;
 
@@ -42,4 +44,3 @@ export const isLoggedIn = async (req, res, next) => {
     res.status(500).json({ message: "Server error: Please log in again." });
   }
 };
-

@@ -23,22 +23,26 @@ const LoadingMore = () => (
 
 const HomeFeed = () => {
   const LIMIT = 3;
-  const scrollContainerRef = useRef(null);
   const navigate = useNavigate();
-  const { userData } = useContext(userDataContext);
+  const scrollContainerRef = useRef(null);
 
-  const [posts, setPost] = useState([]);
+  const { userData, loadingUser } = useContext(userDataContext);
+
   const [content, setContent] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const fetching = useRef(false); // lock to prevent multiple fetches
 
-  // ✅ Fetch one page of posts safely
+  const fetching = useRef(false);
+
+  // 🚀 Fetch home posts
   const getHome = async (pageToFetch = page) => {
     if (!userData?._id) return;
+    if (fetching.current) return;
 
+    fetching.current = true; // lock HERE only
     setLoading(true);
+
     try {
       const res = await axios.get(
         `/api/users/home?page=${pageToFetch}&limit=${LIMIT}`,
@@ -46,38 +50,60 @@ const HomeFeed = () => {
       );
 
       const newPosts = res.data.posts || [];
-      const uniquePosts = newPosts.filter(
-        (p) => !content.some((c) => c._id === p._id)
-      );
 
-      setPost([...posts, ...res.data.posts]);
-      setContent((prev) => [...prev, ...uniquePosts]);
+      setContent((prev) => [
+        ...prev,
+        ...newPosts.filter((p) => !prev.some((c) => c._id === p._id)),
+      ]);
+
       setHasMore(res.data.hasMore);
-      // console.log(res.data.posts[0].isFollowing);
     } catch (err) {
-      console.error("Feed fetch error:", err);
-      toast.error("Failed to load feed");
+      // toast.error("Failed to load feed");
     } finally {
+      fetching.current = false; // unlock HERE only
       setLoading(false);
-      fetching.current = false; // unlock fetch after completion
     }
   };
 
-  useEffect(() => {}, [posts, content]);
-  // ✅ Reset feed when userData changes
+  // 🔄 Reset feed when user logs in / changes
+  const lastUserId = useRef(null);
+
   useEffect(() => {
+    console.log("RESET CHECK", { loadingUser, userId: userData?._id });
+
+    if (loadingUser) return;
     if (!userData?._id) return;
-    setContent([]);
-    setPage(1);
-    setHasMore(true);
-  }, [userData?._id]);
 
-  // ✅ Fetch data whenever page changes
+    // Reset only when new user logs in
+    if (lastUserId.current !== userData._id) {
+      console.log("NEW USER → RESETTING FEED");
+
+      lastUserId.current = userData._id;
+
+      setContent([]);
+      setPage(1);
+      setHasMore(true);
+      return;
+    }
+
+    console.log("SAME USER → NO RESET");
+  }, [loadingUser, userData?._id]);
+
+  // 📌 Fetch on page change
   useEffect(() => {
-    if (userData?._id) getHome(page);
-  }, [page, userData?._id]);
+    console.log("FETCH EFFECT FIRED", {
+      page,
+      loadingUser,
+      userId: userData?._id,
+    });
 
-  // ✅ Infinite scroll listener
+    if (loadingUser) return;
+    if (!userData?._id) return;
+
+    getHome(page);
+  }, [page, loadingUser, userData?._id]);
+
+  // ♾️ Infinite scroll
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -85,12 +111,10 @@ const HomeFeed = () => {
     const handleScroll = () => {
       const bottom =
         container.scrollTop + container.clientHeight >=
-        container.scrollHeight - 10;
+        container.scrollHeight - 20;
 
-      // ✅ Only increment if not fetching, still has more
-      if (bottom && !fetching.current && hasMore) {
-        setPage((prev) => prev + 1); // safe increment
-        fetching.current = true; // lock immediately
+      if (bottom && hasMore && !fetching.current) {
+        setPage((prev) => prev + 1);
       }
     };
 
@@ -158,10 +182,9 @@ const HomeFeed = () => {
                 }}
                 className="w-6 h-6 cursor-pointer text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.6)]"
               />
-              <span className="text-xs text-gray-400 mt-0.5 transition">
-                Saved
-              </span>
+              <span className="text-xs text-gray-400 mt-0.5">Saved</span>
             </div>
+
             <MessageCircle
               onClick={() => {
                 if (!userData)
@@ -170,6 +193,7 @@ const HomeFeed = () => {
               }}
               className="w-6 h-6 cursor-pointer hover:text-purple-400 transition"
             />
+
             <SettingsMenu />
           </div>
         </motion.div>

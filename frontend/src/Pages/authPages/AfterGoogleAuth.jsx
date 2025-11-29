@@ -1,18 +1,19 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.png";
 import axiosInstance from "../../contexts/axiosInstance";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { setLogLevel } from "firebase/app";
 import Loading from "../../components/Loading";
+import { userDataContext } from "../../contexts/UserContext";
 
 const AfterGoogleAuthDetails = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { getCurrentUser, setUserData } = useContext(userDataContext);
 
   const updateDetails = async (e) => {
     try {
@@ -31,6 +32,8 @@ const AfterGoogleAuthDetails = () => {
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
+      setUserData(response.data.user);
+      await getCurrentUser();
       navigate("/");
       toast.success(response.data.message);
     } catch (error) {

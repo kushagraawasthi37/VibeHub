@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { motion } from "framer-motion";
 import google from "../../assets/google.png";
 import logo from "../../assets/logo.png";
@@ -8,12 +8,14 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../utils/firebase";
 import Loading from "../../components/Loading";
 import { Link, useNavigate } from "react-router-dom";
+import { userDataContext } from "../../contexts/UserContext";
 
 const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { getCurrentUser, setUserData } = useContext(userDataContext);
 
   const emailLogin = async (e) => {
     try {
@@ -32,6 +34,9 @@ const Login = () => {
         localStorage.setItem("authToken", response.data.token);
       }
       toast.success(response.data.message);
+      // console.log(response.data.user);
+      setUserData(response.data.user);
+      await getCurrentUser(); // 🔥 REQUIRED
       navigate("/");
     } catch (error) {
       console.log(error);
@@ -51,7 +56,7 @@ const Login = () => {
   const googleLogin = async (e) => {
     try {
       const result = await signInWithPopup(auth, provider);
-      console.log(result);
+      // console.log(result);
       const name = result.user.displayName;
       const email = result.user.email;
 
@@ -61,18 +66,22 @@ const Login = () => {
         { withCredentials: true }
       );
 
-      console.log(response.data);
+      // console.log(response.data);
       toast.success(response?.data?.message || "Login Successfull");
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
 
       if (response?.data?.user?.password || response?.data?.user?.username) {
+        await getCurrentUser();
+        // console.log(response.data.user);
+        setUserData(response.data.user);
         navigate("/");
         return;
       }
 
       navigate("/auth/updateDetails");
+      await getCurrentUser();
     } catch (error) {
       console.log(error);
       const errorMessage =
