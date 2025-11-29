@@ -32,12 +32,8 @@ const app = express();
 // ✅ CORS (for React frontend)
 app.use(
   cors({
-    origin:
-      process.env.CORS_ORIGIN ||
-      "http://localhost:5173" ||
-      "https://vibehub-frontend.onrender.com/",
-    // React dev server
-    credentials: true, // Allow cookies / tokens
+    origin: [process.env.CORS_ORIGIN, "http://localhost:5173"],
+    credentials: true,
   })
 );
 
@@ -62,16 +58,6 @@ app.use(
     },
   })
 );
-
-// ✅ Flash messages (optional)
-app.use(flash());
-
-// ✅ Attach flash data to res.locals (optional, for debugging)
-app.use((req, res, next) => {
-  res.locals.success_msg = req.flash("success_msg");
-  res.locals.error_msg = req.flash("error_msg");
-  next();
-});
 
 // ✅ API Routes
 app.use("/api/auth", authRoutes);
