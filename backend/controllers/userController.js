@@ -4,7 +4,7 @@ import User from "../models/user.js";
 import Post from "../models/post.js";
 import Like from "../models/like.js";
 import Connection from "../models/connection.js";
-import Saved from "../models/Saved.js";
+import Saved from "../models/saved.js";
 import Share from "../models/share.js";
 import Comment from "../models/comment.js";
 
