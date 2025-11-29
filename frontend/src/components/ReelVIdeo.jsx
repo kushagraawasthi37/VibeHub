@@ -4,6 +4,7 @@ import axiosInstance from "../contexts/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { MessageCircle, Send, Bookmark } from "lucide-react";
+import { FiMessageCircle } from "react-icons/fi";
 import { userDataContext } from "../contexts/UserContext";
 import profile from "../assets/avatar.png";
 import CommentsSection from "../Pages/postPages/CommentSection";
@@ -125,7 +126,7 @@ const ReelVIdeo = ({ item }) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
       {/* User info */}
-      <div className="absolute hover:cursor-pointer bottom-10 left-5 text-white w-[70%]">
+      <div className="absolute hover:cursor-pointer bottom-22 sm:bottom-10 left-5 text-white w-[70%]">
         <div className="flex items-center gap-3 mb-2">
           <img
             onClick={() => navigate(`/profile/${item?.user?._id}`)}
@@ -169,20 +170,18 @@ const ReelVIdeo = ({ item }) => {
           <span className="text-xs mt-1 text-gray-300">{totalLike}</span>
         </div>
 
-        {/* Comment */}
-        <div
-          onClick={() => setIsCommentsOpen(true)}
-          className="flex flex-col items-center group cursor-pointer"
-        >
-          <MessageCircle className="w-7 h-7 text-white group-hover:text-blue-400 transition" />
-          <span className="text-xs mt-1 text-gray-300">{totalComment}</span>
-          <CommentsSection
-            postId={item._id}
-            isOpen={isCommentsOpen}
-            onClose={() => setIsCommentsOpen(false)}
-          />
-        </div>
+        <div className="flex flex-col items-center group">
+          <FiMessageCircle
+            onClick={() => {
+              console.log("Comments Opened");
+              console.log(isCommentsOpen);
 
+              setIsCommentsOpen(true);
+            }}
+            className="w-6 h-6 cursor-pointer hover:text-purple-400"
+          />
+          <span className="text-xs text-gray-400 mt-0.5">{totalComment}</span>
+        </div>
         {/* Share */}
         <div
           onClick={shareHandler}
@@ -208,6 +207,14 @@ const ReelVIdeo = ({ item }) => {
           </span>
         </div>
       </div>
+
+      {/* ⭐ ALWAYS AT BOTTOM — THE REAL DRAWER ⭐ */}
+      <CommentsSection
+        postId={item._id}
+        isOpen={isCommentsOpen}
+        onClose={() => setIsCommentsOpen(false)}
+        embedded={true}
+      />
     </div>
   );
 };

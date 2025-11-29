@@ -1,3 +1,4 @@
+// CommentsSection.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../../contexts/axiosInstance.js";
@@ -6,7 +7,7 @@ import { toast } from "react-toastify";
 import { Pencil, Trash2, Heart, Send, X } from "lucide-react";
 import Loading from "../../components/Loading.jsx";
 
-const CommentsSection = ({ postId, isOpen, onClose }) => {
+const CommentsSection = ({ postId, isOpen, onClose, embedded = false }) => {
   const { userData } = useContext(userDataContext);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -15,20 +16,22 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
   const [editText, setEditText] = useState("");
   const [commentLikes, setCommentLikes] = useState({});
 
-  // ✅ Fetch comments
+  // fetch comments
   const getComments = async () => {
+    if (!postId) return;
     try {
       const res = await axiosInstance.get(`/api/comment/allcomment/${postId}`);
       const commentsList = res?.data?.comments || [];
       setComments(commentsList);
       await fetchAllCommentLikes(commentsList);
     } catch (err) {
-      console.log(err);
+      console.log("getComments err", err);
     }
   };
 
   useEffect(() => {
     if (isOpen) getComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, isOpen]);
 
   const fetchAllCommentLikes = async (commentsList) => {
@@ -39,8 +42,8 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
           const res = await axiosInstance.get(`/api/comment/all/${c._id}`);
           likesData[c._id] = {
             totalLikes: res.data.totalLikes,
-            likedByUser: res.data.likes.some(
-              (like) => like.likedBy._id === userData?._id
+            likedByUser: res.data.likes?.some(
+              (like) => like.likedBy?._id === userData?._id
             ),
           };
         })
@@ -51,20 +54,20 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
     }
   };
 
-  // ✅ Add comment
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!userData) return toast.error("Please login to comment!");
+    if (!newComment.trim()) return;
     try {
       setLoading(true);
-      const res = await axiosInstance.post(`/api/comment/add/${postId}`, {
+      await axiosInstance.post(`/api/comment/add/${postId}`, {
         content: newComment,
       });
       setNewComment("");
-      // toast.success(res.data.message);
       getComments();
-    } catch {
-      // toast.error("Failed to add comment");
+    } catch (err) {
+      console.log("add comment err", err);
+      toast.error("Failed to add comment");
     } finally {
       setLoading(false);
     }
@@ -73,10 +76,10 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
   const handleDelete = async (id) => {
     try {
       await axiosInstance.post(`/api/comment/delete/${id}`);
-      // toast.success("Comment deleted");
       getComments();
-    } catch {
-      // toast.error("Delete failed");
+    } catch (err) {
+      console.log("delete err", err);
+      toast.error("Delete failed");
     }
   };
 
@@ -85,12 +88,12 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
       await axiosInstance.post(`/api/comment/edit/${id}`, {
         content: editText,
       });
-      // toast.success("Comment updated");
       setEditId(null);
       setEditText("");
       getComments();
-    } catch {
-      // toast.error("Edit failed");
+    } catch (err) {
+      console.log("edit err", err);
+      toast.error("Edit failed");
     }
   };
 
@@ -99,25 +102,37 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
     try {
       await axiosInstance.post(`/api/comment/like/${id}`);
       getComments();
-    } catch {
-      // toast.error("Like failed");
+    } catch (err) {
+      console.log("like err", err);
+      toast.error("Like failed");
     }
   };
+
+  // choose classes based on embedded mode
+  const overlayClass = embedded
+    ? "absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
+    : "fixed inset-0 bg-black/60 backdrop-blur-sm z-40";
+
+  const sheetClass = embedded
+    ? `absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]
+       text-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto shadow-xl touch-pan-y`
+    : `fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]
+       text-white rounded-t-3xl p-5 max-h-[55vh] overflow-y-auto shadow-xl touch-pan-y`;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay */}
+          {/* overlay */}
           <motion.div
-            className="fixed inset-0 h-52 bg-black/60 backdrop-blur-sm z-40"
+            className={overlayClass}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
 
-          {/* Bottom Sheet */}
+          {/* bottom sheet */}
           <motion.div
             key="comments-popup"
             initial={{ y: "100%" }}
@@ -129,16 +144,17 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
             onDragEnd={(e, info) => {
               if (info.offset.y > 120) onClose();
             }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] 
-             text-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto shadow-xl touch-pan-y"
+            className={sheetClass}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
-            {/* Drag handle */}
+            {/* drag handle */}
             <div className="flex justify-center mb-3">
               <div className="w-12 h-1.5 bg-gray-500/60 rounded-full" />
             </div>
 
-            {/* Header */}
+            {/* header */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
                 Comments 💬
@@ -149,12 +165,13 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
                   onClose();
                 }}
                 className="text-gray-400 hover:text-white transition"
+                aria-label="Close comments"
               >
                 <X size={22} />
               </button>
             </div>
 
-            {/* Add Comment */}
+            {/* add comment */}
             {userData && (
               <form
                 onSubmit={handleAddComment}
@@ -179,7 +196,7 @@ const CommentsSection = ({ postId, isOpen, onClose }) => {
               </form>
             )}
 
-            {/* Comment List */}
+            {/* comment list */}
             <div className="space-y-3">
               {comments.length === 0 ? (
                 <p className="text-gray-400 text-center italic">

@@ -141,10 +141,21 @@ export default function ProfilePage() {
         <Loader />
       ) : (
         <>
-          <div className="min-h-screen bg-black text-white flex flex-col items-center pb-20 font-sans overflow-x-hidden">
+          <div
+            className="
+    min-h-screen text-white flex flex-col items-center pb-20 font-sans overflow-x-hidden 
+    bg-black 
+    md:bg-gradient-to-br md:from-[#070614] md:via-[#24242d] md:to-[#333383]
+    md:animate-gradientFlow
+  "
+          >
+            {" "}
             <BottomNavbar />
             {/* Header */}
-            <div className="w-full max-w-2xl flex items-center justify-between px-5 py-3 border-b border-neutral-800 sticky top-0 bg-black/60 backdrop-blur-md z-50 shadow-[0_0_15px_rgba(168,85,247,0.15)] animate-fadeDown">
+            <div className="hidden lg:block">
+              <LeftNavbar />
+            </div>
+            <div className="w-full max-w-2xl  bg-black/60  flex items-center justify-between px-5 py-3 border-b border-neutral-800 sticky top-0 backdrop-blur-md z-50 shadow-[0_0_15px_rgba(168,85,247,0.15)] animate-fadeDown">
               {/* Back Button + Username */}
               <div className="flex items-center gap-3">
                 <ArrowLeft
@@ -158,7 +169,6 @@ export default function ProfilePage() {
               {/* Settings Button */}
               <SettingsMenu />{" "}
             </div>
-
             {/* Profile Info Section */}
             <div className="w-full max-w-2xl px-4 mt-5 animate-fadeIn">
               <div className="flex items-center justify-between">
@@ -246,7 +256,6 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-
             {/* Tabs (Posts | Reels) */}
             <div className="flex justify-around w-full max-w-2xl mt-8 border-t border-neutral-800 pt-3">
               <button
@@ -271,7 +280,6 @@ export default function ProfilePage() {
                 <PlaySquare size={22} />
               </button>
             </div>
-
             <div className="max-w-2xl w-full px-1 mt-3 animate-fadeIn">
               {activeTab === "posts" ? (
                 allContent.length > 0 ? (

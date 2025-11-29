@@ -280,7 +280,7 @@ const PostCard = ({ item, setContent, content }) => {
           </motion.div>
         )}
 
-        <div className="px-5 pb-4">
+        <div className="px-3 pb-4 pt-4">
           {item?.content && (
             <p className="text-sm text-gray-300">
               <span className="font-semibold text-white">
@@ -291,7 +291,7 @@ const PostCard = ({ item, setContent, content }) => {
           )}
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 text-gray-300">
+        <div className="flex items-center justify-between px-3 py-3 text-gray-300">
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center group">
               {isLiked ? (
@@ -317,11 +317,6 @@ const PostCard = ({ item, setContent, content }) => {
               <span className="text-xs text-gray-400 mt-0.5 group-hover:text-purple-300 transition">
                 {totalComment}
               </span>
-              <CommentsSection
-                postId={item._id}
-                isOpen={isCommentsOpen}
-                onClose={() => setIsCommentsOpen(false)}
-              />
             </div>
             <div className="flex flex-col items-center group">
               <FiSend
@@ -348,6 +343,13 @@ const PostCard = ({ item, setContent, content }) => {
             </span>
           </div>
         </div>
+        {isCommentsOpen && (
+          <CommentsSection
+            postId={item._id}
+            isOpen={isCommentsOpen}
+            onClose={() => setIsCommentsOpen(false)}
+          />
+        )}
       </motion.div>
     </>
   );
