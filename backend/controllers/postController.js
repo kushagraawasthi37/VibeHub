@@ -206,7 +206,8 @@ export const getPostById = async (req, res) => {
     }
 
     // Step 1️⃣ — Fetch the post and populate basic user info
-    const post = await postModel.findById(postid)
+    const post = await postModel
+      .findById(postid)
       .populate({
         path: "user",
         select: "username avatar bio privateAccount",
