@@ -68,7 +68,7 @@ export const userSavedContent = async (req, res) => {
     const limit = Math.min(10, Number(req.query.limit)) || 10;
     const skip = (page - 1) * limit;
 
-    // Step 1️⃣ — Fetch all saved posts by this user (with pagination)
+    // Step 1 — Fetch saved posts
     const savedDocs = await Saved.find({ user: userId })
       .populate({
         path: "post",
@@ -78,13 +78,13 @@ export const userSavedContent = async (req, res) => {
           match: { privateAccount: false },
         },
       })
-      .sort({ createdAt: -1, _id: -1 }) // newest saved first
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    // Step 2️⃣ — Filter out private/deleted/null posts
     const posts = savedDocs.map((s) => s.post).filter((p) => p && p.user);
+
     if (!posts.length) {
       return res.status(200).json({
         message: "No saved content found.",
@@ -96,9 +96,10 @@ export const userSavedContent = async (req, res) => {
     }
 
     const postIds = posts.map((p) => p._id);
+    const userIdsOfPosts = posts.map((p) => p.user._id.toString());
 
-    // Step 3️⃣ — Bulk fetch post stats (likes, comments, saves, shares)
-    const [likes, comments, saves, shares, userLikes, userSaves] =
+    // Step 2 — Stats + follows
+    const [likes, comments, saves, shares, userLikes, userSaves, followData] =
       await Promise.all([
         Like.aggregate([
           { $match: { post: { $in: postIds } } },
@@ -118,9 +119,16 @@ export const userSavedContent = async (req, res) => {
         ]),
         Like.find({ likedBy: userId, post: { $in: postIds } }).select("post"),
         Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
+
+        // ⭐ SAME FOLLOW QUERY
+        Connection.find({
+          follower: userId,
+          Admin: { $in: userIdsOfPosts },
+          status: "accepted",
+        }).select("Admin"),
       ]);
 
-    // Step 4️⃣ — Build lookup maps
+    // Step 3 — Maps
     const likeMap = Object.fromEntries(
       likes.map((l) => [l._id.toString(), l.totalLikes])
     );
@@ -131,14 +139,18 @@ export const userSavedContent = async (req, res) => {
       saves.map((s) => [s._id.toString(), s.totalSaves])
     );
     const shareMap = Object.fromEntries(
-      shares.map((sh) => [sh._id.toString(), sh.totalShares])
+      shares.map((s) => [s._id.toString(), s.totalShares])
     );
+
     const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
     const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
+    const followSet = new Set(followData.map((f) => f.Admin.toString()));
 
-    // Step 5️⃣ — Merge stats into posts
+    // Step 4 — Merge
     const finalPosts = posts.map((post) => {
       const pid = post._id.toString();
+      const uid = post.user._id.toString();
+
       return {
         ...post,
         stats: {
@@ -149,14 +161,14 @@ export const userSavedContent = async (req, res) => {
           isLiked: likedPosts.has(pid),
           isSaved: savedPosts.has(pid),
         },
+        // ⭐ NEW FIELD
+        isFollowing: followSet.has(uid),
       };
     });
 
-    // Step 6️⃣ — Pagination info (based on total saved)
     const totalSaved = await Saved.countDocuments({ user: userId });
     const totalFetched = skip + posts.length;
     const hasMore = totalFetched < totalSaved;
-    console.log("Page ", req.query.page, " Limit ", req.query.limit);
 
     return res.status(200).json({
       message: "Saved content loaded successfully 🚀",

@@ -74,30 +74,31 @@ export const viewOtherProfile = async (req, res) => {
 // feed page Logged In
 export const getFeedLoggedIn = async (req, res) => {
   try {
-    console.log("Page ", req.query.page, " Limit ", req.query.limit);
-
+    // console.log("Page ", req.query.page, " Limit ", req.query.limit);
     const userId = req.user?._id;
     const page = Math.max(1, Number(req.query?.page)) || 1;
     const limit = Math.min(10, Number(req.query.limit)) || 10;
     const skip = (page - 1) * limit;
 
-    // Step 1️⃣ — Fetch paginated posts with video content only + populate basic user info
+    // Step 1 — Fetch posts
     let posts = await Post.find({ videoContent: { $ne: null } })
       .populate({
         path: "user",
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1, _id: -1 }) // tiebreaker with _id
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    posts = posts.filter((post) => post.user !== null); // filter deleted/private users
-    const postIds = posts.map((p) => p._id);
+    posts = posts.filter((post) => post.user !== null);
 
-    // Step 2️⃣ — Bulk fetch all stats
-    const [likes, comments, saves, shares, userLikes, userSaves] =
+    const postIds = posts.map((p) => p._id);
+    const userIdsOfPosts = posts.map((p) => p.user._id.toString());
+
+    // Step 2 — Bulk fetch all stats
+    const [likes, comments, saves, shares, userLikes, userSaves, followData] =
       await Promise.all([
         Like.aggregate([
           { $match: { post: { $in: postIds } } },
@@ -117,9 +118,16 @@ export const getFeedLoggedIn = async (req, res) => {
         ]),
         Like.find({ likedBy: userId, post: { $in: postIds } }).select("post"),
         Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
+
+        // ⭐ GET FOLLOW INFO FOR ALL POST USERS
+        Connection.find({
+          follower: userId,
+          Admin: { $in: userIdsOfPosts },
+          status: "accepted",
+        }).select("Admin"),
       ]);
 
-    // Step 3️⃣ — Convert stats to lookup maps
+    // Step 3 — Convert stats to maps
     const likeMap = Object.fromEntries(
       likes.map((l) => [l._id.toString(), l.totalLikes])
     );
@@ -136,9 +144,14 @@ export const getFeedLoggedIn = async (req, res) => {
     const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
     const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
 
-    // Step 4️⃣ — Merge stats into posts
+    // ⭐ Create follow lookup
+    const followSet = new Set(followData.map((f) => f.Admin.toString()));
+
+    // Step 4 — Merge stats + follow info
     const finalPosts = posts.map((post) => {
       const pid = post._id.toString();
+      const uid = post.user._id.toString();
+
       return {
         ...post,
         stats: {
@@ -149,10 +162,12 @@ export const getFeedLoggedIn = async (req, res) => {
           isLiked: likedPosts.has(pid),
           isSaved: savedPosts.has(pid),
         },
+        // ⭐ ADD THIS
+        isFollowing: followSet.has(uid),
       };
     });
 
-    // Step 5️⃣ — Pagination info
+    // Step 5 — Pagination info
     const totalPosts = await Post.countDocuments({
       videoContent: { $ne: null },
     });
@@ -177,23 +192,22 @@ export const getFeedLoggedIn = async (req, res) => {
 //Home page
 export const getHomeLoggedIn = async (req, res) => {
   try {
-    console.log("Home Hit Personal");
-    console.log(req.query);
+    // console.log("Home Hit Personal");
+    // console.log(req.query);
 
-    //Jo bhi humko params se data milega wo string mai hoga wo pahele Number mai change kro
     const userId = req.user?._id;
     const page = Math.max(1, Number(req.query?.page)) || 1;
-    const limit = Math.min(10, Number(req.query.limit)) || 10; // max 10 posts per page
+    const limit = Math.min(10, Number(req.query.limit)) || 10;
     const skip = (page - 1) * limit;
 
-    // Step 1️⃣ — Fetch paginated public posts + populate basic user info
+    // Step 1 — Fetch posts
     let posts = await Post.find()
       .populate({
         path: "user",
         select: "avatar coverImage username privateAccount",
         match: { privateAccount: false },
       })
-      .sort({ createdAt: -1, _id: -1 }) // Add _id as a tiebreaker
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -201,9 +215,10 @@ export const getHomeLoggedIn = async (req, res) => {
     posts = posts.filter((post) => post.user !== null);
 
     const postIds = posts.map((p) => p._id);
+    const userIdsOfPosts = posts.map((p) => p.user._id.toString());
 
-    // Step 2️⃣ — Bulk fetch all stats
-    const [likes, comments, saves, shares, userLikes, userSaves] =
+    // Step 2 — Fetch stats + follow info
+    const [likes, comments, saves, shares, userLikes, userSaves, followData] =
       await Promise.all([
         Like.aggregate([
           { $match: { post: { $in: postIds } } },
@@ -223,9 +238,16 @@ export const getHomeLoggedIn = async (req, res) => {
         ]),
         Like.find({ likedBy: userId, post: { $in: postIds } }).select("post"),
         Saved.find({ user: userId, post: { $in: postIds } }).select("post"),
+
+        // ⭐ FOLLOW INFO
+        Connection.find({
+          follower: userId,
+          Admin: { $in: userIdsOfPosts },
+          status: "accepted",
+        }).select("Admin"),
       ]);
 
-    // Step 3️⃣ — Convert stats to lookup maps
+    // Step 3 — Lookup maps
     const likeMap = Object.fromEntries(
       likes.map((l) => [l._id.toString(), l.totalLikes])
     );
@@ -236,14 +258,18 @@ export const getHomeLoggedIn = async (req, res) => {
       saves.map((s) => [s._id.toString(), s.totalSaves])
     );
     const shareMap = Object.fromEntries(
-      shares.map((sh) => [sh._id.toString(), sh.totalShares])
+      shares.map((s) => [s._id.toString(), s.totalShares])
     );
+
     const likedPosts = new Set(userLikes.map((l) => l.post.toString()));
     const savedPosts = new Set(userSaves.map((s) => s.post.toString()));
+    const followSet = new Set(followData.map((f) => f.Admin.toString()));
 
-    // Step 4️⃣ — Merge stats into posts
+    // Step 4 — Merge
     const finalPosts = posts.map((post) => {
       const pid = post._id.toString();
+      const uid = post.user._id.toString();
+
       return {
         ...post,
         stats: {
@@ -254,25 +280,21 @@ export const getHomeLoggedIn = async (req, res) => {
           isLiked: likedPosts.has(pid),
           isSaved: savedPosts.has(pid),
         },
+        // ⭐ NEW FIELD
+        isFollowing: followSet.has(uid),
       };
     });
 
-    // Step 5️⃣ — Return paginated response including page info
-    // Step 5️⃣ — Return paginated response including page info
     const totalPosts = await Post.countDocuments();
     const totalFetched = skip + posts.length;
-    finalPosts.forEach((item) => {
-      console.log(item._id);
-    });
+    const hasMore = totalFetched < totalPosts;
 
-    let hasMore = totalFetched < totalPosts;
-    console.log(hasMore);
     return res.status(200).json({
       message: "Home feed loaded successfully 🚀",
       posts: finalPosts,
       page,
       limit,
-      hasMore, // ✅ accurate check
+      hasMore,
     });
   } catch (err) {
     console.error("Home load error:", err);

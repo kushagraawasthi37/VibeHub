@@ -21,7 +21,7 @@ const ReelVIdeo = ({ item }) => {
   const [totalSaved, setTotalSaved] = useState(item.stats?.saves ?? 0);
   const [totalComment, setTotalComment] = useState(item.stats?.comments ?? 0);
   const [totalShare, setTotalShare] = useState(item.stats?.shares ?? 0);
-  const [isFollow, setIsFollow] = useState(item.stats?.isFollow ?? false);
+  const [isFollow, setIsFollow] = useState(item.isFollowing ?? false);
 
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
@@ -86,8 +86,7 @@ const ReelVIdeo = ({ item }) => {
       const response = await axiosInstance.get(
         `/api/users/follow/${item?.user?._id}`
       );
-      console.log(response);
-      setIsFollow((prev) => !prev);
+      // console.log(response);
     } catch (error) {
       console.log(error);
       setIsFollow((prev) => !prev);
@@ -97,7 +96,7 @@ const ReelVIdeo = ({ item }) => {
   return (
     <div
       key={item._id}
-      className="relative w-full h-[calc(100vh-4.5rem)] sm:h-screen snap-start flex items-center justify-center"
+      className="relative rounded-md  w-full h-screen sm:h-screen snap-start flex items-center justify-center overflow-hidden"
       style={{ scrollSnapAlign: "start" }}
     >
       {/* Video */}
@@ -126,7 +125,7 @@ const ReelVIdeo = ({ item }) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
       {/* User info */}
-      <div className="absolute hover:cursor-pointer bottom-24 left-5 text-white w-[70%]">
+      <div className="absolute hover:cursor-pointer bottom-10 left-5 text-white w-[70%]">
         <div className="flex items-center gap-3 mb-2">
           <img
             onClick={() => navigate(`/profile/${item?.user?._id}`)}
@@ -143,7 +142,7 @@ const ReelVIdeo = ({ item }) => {
           {!isFollow && (
             <button
               onClick={followHandler}
-              className="ml-3 bg-purple-600 hover:bg-purple-700 transition text-white text-xs px-3 py-1 rounded-full"
+              className="ml-3 bg-purple-600 hover:bg-purple-700 transition text-white text-xs px-3 py-1 rounded-md"
             >
               Follow
             </button>

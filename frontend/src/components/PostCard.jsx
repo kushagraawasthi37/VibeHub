@@ -35,9 +35,7 @@ const PostCard = ({ item, setContent, content }) => {
   const isOwner = userData?._id === item.user._id;
 
   const [isFollow, setIsFollow] = useState(
-    item.stats.isFollow !== undefined
-      ? !item.stats.isFollow && !isOwner
-      : !isOwner
+    item.isFollowing !== undefined ? !item.isFollowing && !isOwner : !isOwner
   );
 
   const handleFollow = async () => {

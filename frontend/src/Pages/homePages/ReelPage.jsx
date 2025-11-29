@@ -39,6 +39,8 @@ const ReelPage = () => {
         (p) => !content.some((c) => c._id === p._id)
       );
 
+      console.log(res.data);
+
       setContent((prev) => [...prev, ...uniquePosts]);
       setHasMore(res.data.hasMore);
     } catch (err) {
@@ -83,24 +85,23 @@ const ReelPage = () => {
   }, [loading, hasMore]);
 
   return (
-    <div className="relative flex bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white font-sans min-h-screen overflow-hidden">
+    <div className="relative flex bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white font-sans h-screen overflow-hidden">
       {/* Left Navbar */}
       <div className="hidden sm:flex fixed top-0 left-0 h-screen z-40">
         <LeftNavbar />
       </div>
 
-      {/* Scrollable Reels */}
+      {/* MAIN SCROLL AREA */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 w-full sm:ml-24 md:ml-28 overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scroll-smooth"
-        style={{ height: "100vh" }}
+        className="flex-1 h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth px-0 sm:pl-24 md:pl-28"
       >
         {/* Background Blobs */}
         <motion.div
           initial={{ opacity: 0, scale: 0.7 }}
           animate={{ opacity: 0.25, scale: 1 }}
           transition={{ duration: 3, repeat: Infinity, repeatType: "mirror" }}
-          className="absolute top-[-10%] left-[-10%] w-60 h-60 sm:w-72 sm:h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute top-[-15%] left-[-10%] w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl"
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.7 }}
@@ -111,23 +112,26 @@ const ReelPage = () => {
             repeat: Infinity,
             repeatType: "mirror",
           }}
-          className="absolute bottom-[-10%] right-[-10%] w-60 h-60 sm:w-72 sm:h-72 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute bottom-[-15%] right-[-10%] w-72 h-72 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl"
         />
 
-        {/* Reels Section (One reel per screen) */}
+        {/* REELS */}
         {content.map((item) => (
           <div
             key={item._id}
-            className="snap-start w-full h-screen flex items-center justify-center"
+            className="w-full min-h-screen snap-start flex justify-center mb-1"
           >
-            <ReelVideo item={item} />
+            <div className="max-w-[420px] w-full h-full flex items-center justify-center">
+              <ReelVideo item={item} />
+            </div>
           </div>
         ))}
 
-        {/* Loading / End */}
+        {/* Loader */}
         {loading && hasMore && <LoadingMore />}
+
         {!hasMore && !loading && (
-          <p className="text-gray-400 text-sm mt-5 text-center">
+          <p className="text-gray-400 text-sm mt-5 text-center pb-20">
             You’ve reached the end 🎉
           </p>
         )}

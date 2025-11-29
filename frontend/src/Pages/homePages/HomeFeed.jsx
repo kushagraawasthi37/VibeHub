@@ -22,7 +22,7 @@ const LoadingMore = () => (
 );
 
 const HomeFeed = () => {
-  const LIMIT = 4;
+  const LIMIT = 3;
   const scrollContainerRef = useRef(null);
   const navigate = useNavigate();
   const { userData } = useContext(userDataContext);
@@ -53,6 +53,7 @@ const HomeFeed = () => {
       setPost([...posts, ...res.data.posts]);
       setContent((prev) => [...prev, ...uniquePosts]);
       setHasMore(res.data.hasMore);
+      // console.log(res.data.posts[0].isFollowing);
     } catch (err) {
       console.error("Feed fetch error:", err);
       toast.error("Failed to load feed");
@@ -62,16 +63,7 @@ const HomeFeed = () => {
     }
   };
 
-  useEffect(() => {
-    console.log("Posts ");
-    posts.forEach((item) => {
-      console.log(item._id);
-    });
-    console.log("Content");
-    content.forEach((item) => {
-      console.log(item._id);
-    });
-  }, [posts, content]);
+  useEffect(() => {}, [posts, content]);
   // ✅ Reset feed when userData changes
   useEffect(() => {
     if (!userData?._id) return;
