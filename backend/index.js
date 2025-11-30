@@ -28,12 +28,15 @@ import commentRoutes from "./routes/commentRoutes.js";
 import messageRoutes from "./routes/messageRoute.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 // ✅ CORS (for React frontend)
 app.use(
   cors({
     origin: [process.env.CORS_ORIGIN, "http://localhost:5173"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -42,7 +45,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "public"))); // serve static files if needed
-app.set("trust proxy", 1);
 
 // ✅ Session middleware (for flash + login session)
 app.use(
