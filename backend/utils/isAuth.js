@@ -46,7 +46,7 @@ export const isLoggedIn = async (req, res, next) => {
     // 🔍 5. Verify token validity
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       console.log("✅ Token Decoded Successfully:", decoded);
     } catch (verifyError) {
       console.log("❌ Token verification failed:", verifyError.message);
