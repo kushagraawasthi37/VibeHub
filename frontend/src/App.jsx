@@ -1,15 +1,6 @@
-import React, { useContext, useEffect } from "react";
+import React from "react";
 import { ToastContainer } from "react-toastify";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
-import { userDataContext } from "./contexts/UserContext";
-import ProtectedRoute from "./ProtectedRoute";
-import Lenis from "@studio-freight/lenis";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Auth
 import Registration from "./Pages/authPages/Registration";
@@ -38,207 +29,50 @@ import DeleteAccountPage from "./Pages/userPages/DeleteAccountPage";
 import ConversationPage from "./Pages/userPages/ConversationPage";
 import MessagePage from "./Pages/userPages/MessagePage";
 
-const AppContent = () => {
-  const { userData } = useContext(userDataContext);
-  const location = useLocation();
-
-  // 👇 GLOBAL LENIS SMOOTH SCROLL INITIALIZATION
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      smooth: true,
-      smoothTouch: false,
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-  }, []);
-
-  const isLoggedIn = userData && Object.keys(userData).length > 0;
-
-  return (
-    <>
-      <ToastContainer />
-
-      <Routes>
-        {/* Public */}
-        <Route
-          path="/signup"
-          element={isLoggedIn ? <Navigate to="/" replace /> : <Registration />}
-        />
-        <Route
-          path="/login"
-          element={
-            isLoggedIn ? (
-              <Navigate to={location.state?.from || "/"} replace />
-            ) : (
-              <Login />
-            )
-          }
-        />
-        <Route
-          path="/verify-email/:token"
-          element={isLoggedIn ? <Navigate to="/" replace /> : <VerifyEmail />}
-        />
-        <Route
-          path="/forgetpassword"
-          element={
-            isLoggedIn ? <Navigate to="/" replace /> : <ForgotPassword />
-          }
-        />
-        <Route
-          path="/reset-password/:token"
-          element={
-            isLoggedIn ? <Navigate to="/" replace /> : <VerifyResetToken />
-          }
-        />
-        <Route
-          path="/auth/updateDetails"
-          element={
-            isLoggedIn ? (
-              <Navigate to="/" replace />
-            ) : (
-              <AfterGoogleAuthDetails />
-            )
-          }
-        />
-
-        {/* Protected */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomeFeed />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/createpost"
-          element={
-            <ProtectedRoute>
-              <CreatePost />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/post/:postid"
-          element={
-            <ProtectedRoute>
-              <SinglePost />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/post/edit/:postid"
-          element={
-            <ProtectedRoute>
-              <EditPostPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/comment/:postId"
-          element={
-            <ProtectedRoute>
-              <CommentsSection />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/saved"
-          element={
-            <ProtectedRoute>
-              <SavedPosts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/feed"
-          element={
-            <ProtectedRoute>
-              <ReelPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <Search />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/:id"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile/editprofile/:id"
-          element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile/delete-account/:username/:id"
-          element={
-            <ProtectedRoute>
-              <DeleteAccountPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/conversations"
-          element={
-            <ProtectedRoute>
-              <ConversationPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/message/:otherParticipantId"
-          element={
-            <ProtectedRoute>
-              <MessagePage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* 404 */}
-        <Route
-          path="*"
-          element={
-            <h1 className="text-center text-white mt-10">404 - Not Found</h1>
-          }
-        />
-      </Routes>
-    </>
-  );
-};
-
 const App = () => {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <div>
+      <ToastContainer />
+      <Router>
+        <Routes>
+          {/* Post Routes */}
+          <Route path="/createpost" element={<CreatePost />} />
+          <Route path="/post/:postid" element={<SinglePost />} />
+          <Route path="/post/edit/:postid" element={<EditPostPage />} />
+          <Route path="/comment/:postId" element={<CommentsSection />} />
+
+          {/* Auth Routes */}
+          <Route path="/signup" element={<Registration />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgetpassword" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<VerifyResetToken />} />
+          <Route
+            path="/auth/updateDetails"
+            element={<AfterGoogleAuthDetails />}
+          />
+
+          {/* Home */}
+          <Route path="/" element={<HomeFeed />} />
+          <Route path="/saved" element={<SavedPosts />} />
+          <Route path="/feed" element={<ReelPage />} />
+          <Route path="/search" element={<Search />} />
+
+          {/* User */}
+          <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/profile/editprofile/:id" element={<EditProfile />} />
+          <Route
+            path="/profile/delete-account/:username/:id"
+            element={<DeleteAccountPage />}
+          />
+          <Route path="/conversations" element={<ConversationPage />} />
+          <Route
+            path="/message/:otherParticipantId"
+            element={<MessagePage />}
+          />
+        </Routes>
+      </Router>
+    </div>
   );
 };
 
