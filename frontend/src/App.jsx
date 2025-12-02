@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import {
   BrowserRouter as Router,
@@ -7,10 +7,11 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { userDataContext } from "./contexts/UserContext"; // adjust import if needed
+import { userDataContext } from "./contexts/UserContext";
 import ProtectedRoute from "./ProtectedRoute";
+import Lenis from "@studio-freight/lenis";
 
-// ✅ Auth Pages
+// Auth
 import Registration from "./Pages/authPages/Registration";
 import Login from "./Pages/authPages/Login";
 import AfterGoogleAuthDetails from "./Pages/authPages/AfterGoogleAuth";
@@ -18,19 +19,19 @@ import ForgotPassword from "./Pages/authPages/ForgetPassword";
 import VerifyEmail from "./utils/AuthVerification";
 import VerifyResetToken from "./utils/VeriffyResetToken";
 
-// ✅ Post Pages
+// Post
 import CreatePost from "./Pages/postPages/CreatePost";
 import EditPostPage from "./Pages/postPages/EditPostPage";
 import CommentsSection from "./Pages/postPages/CommentSection";
 import SinglePost from "./Pages/userPages/SinglePost";
 
-// ✅ Home & Feed Pages
+// Home
 import HomeFeed from "./Pages/homePages/HomeFeed";
 import SavedPosts from "./Pages/homePages/SavedPosts";
 import ReelPage from "./Pages/homePages/ReelPage";
 import Search from "./Pages/homePages/Search";
 
-// ✅ User Pages
+// User
 import ProfilePage from "./Pages/userPages/ProfilePage";
 import EditProfile from "./Pages/userPages/EditProfile";
 import DeleteAccountPage from "./Pages/userPages/DeleteAccountPage";
@@ -41,7 +42,22 @@ const AppContent = () => {
   const { userData } = useContext(userDataContext);
   const location = useLocation();
 
-  // Check if user logged in
+  // 👇 GLOBAL LENIS SMOOTH SCROLL INITIALIZATION
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      smooth: true,
+      smoothTouch: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+  }, []);
+
   const isLoggedIn = userData && Object.keys(userData).length > 0;
 
   return (
@@ -49,7 +65,7 @@ const AppContent = () => {
       <ToastContainer />
 
       <Routes>
-        {/* 🔓 Public Routes */}
+        {/* Public */}
         <Route
           path="/signup"
           element={isLoggedIn ? <Navigate to="/" replace /> : <Registration />}
@@ -91,7 +107,7 @@ const AppContent = () => {
           }
         />
 
-        {/* 🔒 Protected Routes */}
+        {/* Protected */}
         <Route
           path="/"
           element={
@@ -100,6 +116,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/createpost"
           element={
@@ -108,6 +125,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/post/:postid"
           element={
@@ -116,6 +134,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/post/edit/:postid"
           element={
@@ -124,6 +143,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/comment/:postId"
           element={
@@ -132,6 +152,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/saved"
           element={
@@ -164,6 +185,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/profile/editprofile/:id"
           element={
@@ -172,6 +194,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/profile/delete-account/:username/:id"
           element={
@@ -180,6 +203,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/conversations"
           element={
@@ -188,6 +212,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/message/:otherParticipantId"
           element={
@@ -197,7 +222,7 @@ const AppContent = () => {
           }
         />
 
-        {/* 404 Page */}
+        {/* 404 */}
         <Route
           path="*"
           element={

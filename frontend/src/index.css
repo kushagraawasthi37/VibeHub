@@ -38,3 +38,13 @@
     background-size: 200% 200%;
     animation: gradientFlow 8s ease infinite;
 }
+
+
+
+html,
+body {
+    height: auto !important;
+    overflow: visible !important;
+    scroll-behavior: auto !important;
+    /* disable native smooth scroll */
+}

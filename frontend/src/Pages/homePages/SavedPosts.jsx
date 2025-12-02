@@ -45,7 +45,7 @@ const SavedPosts = () => {
       setHasMore(res.data.hasMore);
     } catch (err) {
       console.error("Saved posts fetch error:", err);
-      toast.error("Failed to load saved posts");
+      // toast.error("Failed to load saved posts");
     } finally {
       setLoading(false);
       fetching.current = false;
