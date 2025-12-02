@@ -22,7 +22,7 @@ const LoadingMore = () => (
 );
 
 const HomeFeed = () => {
-  const LIMIT = 3;
+  const LIMIT = 6;
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
 

@@ -13,7 +13,7 @@ import { userDataContext } from "../../contexts/UserContext";
 import LoadingMore from "../../components/LoadingMore";
 
 const ReelPage = () => {
-  const LIMIT = 2;
+  const LIMIT = 3;
   const scrollContainerRef = useRef(null);
   const navigate = useNavigate();
   const { userData } = useContext(userDataContext);

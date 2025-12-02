@@ -12,7 +12,7 @@ import LoadingMore from "../../components/LoadingMore";
 import { userDataContext } from "../../contexts/UserContext";
 
 const SavedPosts = () => {
-  const LIMIT = 4;
+  const LIMIT = 6;
   const scrollContainerRef = useRef(null);
   const navigate = useNavigate();
   const { userData } = useContext(userDataContext);
